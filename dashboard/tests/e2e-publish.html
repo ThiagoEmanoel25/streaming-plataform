@@ -1,0 +1,36 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../css/styles.css"></head><body>
+<div class="app"><aside class="side" id="side"></aside><main class="main" id="view"></main></div><div id="modal-root"></div><div id="toast-root"></div>
+<script>window.__e=[];addEventListener('error',e=>__e.push(e.message));addEventListener('unhandledrejection',e=>__e.push('rej '+(e.reason&&e.reason.message)));
+localStorage.setItem('homecreators.v1',JSON.stringify({session:{email:'a@b.com'}}))</script>
+<script type="module">
+import '/js/main.js';
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));const $=s=>document.querySelector(s);const $$=s=>[...document.querySelectorAll(s)];
+window.__run=async()=>{const L=[];const ok=(n,c)=>L.push((c?'PASS ':'FAIL ')+n);
+ const row=n=>$$('.net-row').find(r=>r.querySelector('b').textContent===n);
+ try{
+ await sleep(300);$('[data-route=publications]').click();await sleep(200);
+ ok('7 networks',$$('.net-row').length===7);
+ const cap=$('.p-cap');cap.value='Que golaço!';cap.dispatchEvent(new Event('input',{bubbles:true}));
+ ok('counter',$('.p-cnt').textContent==='11/2200');
+ $('[data-conn=tt]').click();await sleep(50);for(let i=0;i<4;i++){$('[data-a=next]').click();await sleep(20)}await sleep(2000);
+ ok('wizard done',/conectado com sucesso/.test($('.modal').textContent));$('[data-a=done]').click();await sleep(100);
+ ok('tiktok now toggle selected',!!$('[data-net=tt]')&&$('[data-net=tt]').checked);
+ $('[data-now]').click();await sleep(400);
+ ok('3 statuses queued',$$('.net-row .pill').filter(p=>/Na fila|Processando/.test(p.textContent)).length===3);
+ await sleep(6000);
+ ok('ig success',row('Instagram').textContent.includes('Publicado'));
+ ok('yt success',row('YouTube').textContent.includes('Publicado'));
+ ok('tiktok failed + retry, others unaffected',row('TikTok').textContent.includes('Falhou')&&!!row('TikTok').querySelector('[data-retry]'));
+ $('[data-retry=tt]').click();await sleep(6000);
+ ok('retry success',row('TikTok').textContent.includes('Publicado'));
+ ok('all 3 published once (usage +3)',JSON.parse(localStorage.getItem('homecreators.v1')).usage.publications===21);
+ $('[data-reset]').click();await sleep(50);
+ $('[data-sched]').click();await sleep(50);ok('schedule modal with suggestion',/19:30/.test($('.modal').textContent));
+ $('[data-ok]').click();await sleep(1200);
+ ok('scheduled statuses',$$('.net-row').filter(r=>r.textContent.includes('Agendado')).length===3);
+ for(const r of ['home','accounts','analytics','strategies','settings']){$('[data-route='+r+']').click();await sleep(1200);ok('route '+r,$('.view').children.length>0)}
+ $('[data-route=strategies]').click();await sleep(100);$('[data-use]').click();await sleep(50);
+ $('[data-route=reels]').click();await sleep(900);ok('caption from Estratégias reaches Reels panel',/golaço/i.test($('.p-cap').value));
+ }catch(e){L.push('EXC '+e.message+' '+(e.stack||'').split('\n')[1])}
+ L.push('ERRS '+JSON.stringify(__e));return L.join('\n')};
+</script></body></html>

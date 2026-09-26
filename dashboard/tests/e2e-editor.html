@@ -1,0 +1,94 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../css/styles.css"></head><body>
+<div class="app"><aside class="side" id="side"></aside><main class="main" id="view"></main></div><div id="modal-root"></div><div id="toast-root"></div><pre id="result">RUN</pre>
+<script>window.__e=[];addEventListener('error',e=>__e.push(e.message+' @'+e.filename+':'+e.lineno));addEventListener('unhandledrejection',e=>__e.push('rej '+(e.reason&&e.reason.stack||e.reason)));
+localStorage.setItem('homecreators.v1',JSON.stringify({session:{email:'a@b.com'}}))</script>
+<script type="module">
+import '/js/main.js';
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));const $=s=>document.querySelector(s);const $$=s=>[...document.querySelectorAll(s)];
+const L=[];const ok=(n,c)=>L.push((c?'PASS ':'FAIL ')+n);
+const click=s=>{const e=$(s);if(!e)throw new Error('missing '+s);e.click()};
+const setv=(s,v,ev='input')=>{const e=$(s);if(!e)throw new Error('missing '+s);e.value=v;e.dispatchEvent(new Event(ev,{bubbles:true}))};
+try{
+ await sleep(300);
+ click('[data-route=reels]');await sleep(900);
+ ok('12 segments',$$('.sgi').length===12);
+ ok('4 columns + timeline',!!$('.segs')&&!!$('.stage')&&!!$('#ctl')&&!!$('.rcol')&&!!$('.tl'));
+ ok('brand logo overlay by default',$$('.ovl .ov').length===1);
+ ok('undo disabled at start',$('[data-act=undo]').disabled===true);
+ // slider + undo/redo
+ setv('[data-k=zoom]',150);$('[data-k=zoom]').dispatchEvent(new Event('change',{bubbles:true}));
+ ok('zoom 150 applied',$('.vid').style.transform.includes('scale(1.5)')&&$('[data-kbox=zoom]').value==='150%');
+ ok('undo enabled',$('[data-act=undo]').disabled===false);
+ click('[data-act=undo]');await sleep(30);
+ ok('undo restores zoom',$('.vid').style.transform.includes('scale(1)')&&$('[data-kbox=zoom]').value==='100%');
+ click('[data-act=redo]');await sleep(30);
+ ok('redo reapplies',$('[data-kbox=zoom]').value==='150%');
+ // value box typing
+ setv('[data-kbox=y]','-10','change');
+ ok('vbox edit -> preview',/translate\(0%,\s*-10%\)/.test($('.vid').style.transform)&&$('[data-k=y]').value==='-10');
+ setv('[data-kbox=x]','abc','change');ok('vbox invalid ignored',$('[data-k=x]').value==='0');
+ // color
+ setv('[data-k=temp]',40);ok('temp tints preview',parseFloat($('.tint').style.opacity)>0.3);
+ setv('[data-k=bright]',20);ok('brightness filter',$('.vid').style.filter.includes('brightness(120%)'));
+ // ratio
+ click('[data-ratio="4:5"]');ok('ratio 4:5',$('[data-phone]').classList.contains('r45'));
+ click('[data-ratio="9:16"]');
+ // timeline drag + keyframes
+ const m=$('.tl-main');const r=m.getBoundingClientRect();
+ m.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,clientX:r.left+r.width*0.5,clientY:r.top+30,pointerId:1}));
+ ok('playhead click moves to ~50%',Math.abs(parseFloat($('.tl-ph').style.left)-50)<2);
+ click('[data-act=kfadd]');await sleep(20);
+ ok('keyframe added (diamond on timeline)',$$('.kfd').length===1);
+ setv('[data-scrub]',0);ok('scrub to 0',parseFloat($('.tl-ph').style.left)===0);
+ click('.tl-bar [data-act=kfadd]');await sleep(20);
+ ok('2 keyframes',$$('.kfd').length===2);
+ setv('[data-scrub]',250);ok('interpolation between keyframes ran',$('#clk').textContent.startsWith('00:03')||$('#clk').textContent.startsWith('00:04'));
+ click('[data-act=kfdel]');await sleep(20);
+ // overlays
+ click('[data-act=ov-text]');await sleep(20);
+ ok('text overlay in preview',/QUE GOLA/.test($('.ovl').textContent));
+ setv('[data-oktext]','GOLAÇO!','input');ok('text edit live',/GOLAÇO!/.test($('.ovl').textContent));
+ setv('[data-ok=x]',-20);ok('overlay X moves',$('.ovl .ov.txt').style.left==='30%');
+ click('[data-ovdel]');await sleep(20);
+ ok('overlay removed',$$('.ovl .ov').length===1);
+ // section collapse
+ click('[data-sec=cor]');ok('cor collapses',$$('.sec')[1].classList.contains('closed'));click('[data-sec=cor]');
+ // music
+ click('[data-track=t2]');await sleep(20);
+ ok('music track on timeline',!!$('.mtrack:not(.empty)')&&/Beat/.test($('.mtrack').textContent));
+ // segment change resets pan + keyframes
+ click('[data-seg=s3]');await sleep(30);
+ ok('segment switch: ',$('.sgi.on').dataset.seg==='s3'&&$$('.kfd').length===0&&$('.tl-main .ruler').textContent.includes('18s'));
+ // play
+ click('.ptrans [data-act=play]');await sleep(500);
+ ok('playing advances',parseFloat($('.tl-ph').style.left)>0);
+ click('.ptrans [data-act=play]');
+ // export via header
+ click('.rl-top [data-act=export]');await sleep(400);
+ ok('export tab + progress',$('.rtabs .on').textContent==='Exportação'&&!!$('.phase'));
+ await sleep(4800);
+ ok('export done card',/Reel exportado/.test($('#rb').textContent));
+ ok('usage bumped 13 of 50',/13 de 50/.test($('#side').textContent));
+ // edit invalidates export
+ setv('[data-k=zoom]',120);
+ ok('editing invalidates export',/Resumo/.test($('#rb').textContent));
+ // publish now with auto-export
+ click('[data-rtab=pub]');await sleep(50);
+ $('.p-cap').value='Teste';$('.p-cap').dispatchEvent(new Event('input',{bubbles:true}));
+ click('[data-now]');await sleep(500);
+ ok('publish triggers export first',!!$('.phase'));
+ await sleep(5500);
+ ok('back to Publicar tab after auto-export',$('.rtabs .on').textContent==='Publicar');
+ await sleep(5500);
+ const done=$$('.net-row').filter(x=>x.textContent.includes('Publicado')).map(x=>x.querySelector('b').textContent);
+ ok('IG + YT published '+done,done.length===2);
+ // save + reload project from home
+ click('[data-act=save]');await sleep(20);
+ click('[data-route=home]');await sleep(100);
+ ok('home lists saved project',$$('.proj')[0].textContent.includes('contra-ataque'));
+ // continue editing p1 -> keyframes preloaded
+ $$('[data-continue=p1]')[0]?.click();await sleep(900);
+ ok('continue p1: keyframes + text overlay restored',$$('.kfd').length===2&&/QUE GOLA/.test($('.ovl').textContent)&&$('.mtrack:not(.empty)'));
+}catch(e){L.push('EXC '+e.message+' '+(e.stack||'').split('\n')[1])}
+L.push('ERRS '+JSON.stringify(__e));$('#result').textContent=L.join('\n')+'\nDONE';
+</script></body></html>

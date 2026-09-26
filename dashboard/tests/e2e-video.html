@@ -1,0 +1,36 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../css/styles.css"></head><body>
+<div class="app"><aside class="side" id="side"></aside><main class="main" id="view"></main></div><div id="modal-root"></div><div id="toast-root"></div>
+<script>window.__e=[];addEventListener('error',e=>__e.push(e.message));addEventListener('unhandledrejection',e=>__e.push('rej '+(e.reason&&e.reason.message)));
+localStorage.setItem('homecreators.v1',JSON.stringify({session:{email:'a@b.com'}}))</script>
+<script type="module">
+import '/js/main.js';
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));const $=s=>document.querySelector(s);const $$=s=>[...document.querySelectorAll(s)];
+window.__run=async()=>{const L=[];const ok=(n,c)=>L.push((c?'PASS ':'FAIL ')+n);
+ try{
+ await sleep(300);$('[data-route=reels]').click();await sleep(900);
+ // gera um vídeo real (canvas + MediaRecorder) e envia pelo input de arquivo
+ const cv=document.createElement('canvas');cv.width=160;cv.height=284;const g=cv.getContext('2d');
+ const rec=new MediaRecorder(cv.captureStream(15),{mimeType:'video/webm'});const chunks=[];rec.ondataavailable=e=>chunks.push(e.data);
+ const stopped=new Promise(r=>rec.onstop=r);rec.start();let f=0;const iv=setInterval(()=>{g.fillStyle=`hsl(${f*9%360} 70% 45%)`;g.fillRect(0,0,160,284);g.fillStyle='#fff';g.fillRect(10+(f*3)%120,120,30,30);f++},60);
+ await sleep(3000);clearInterval(iv);rec.stop();await stopped;
+ const file=new File([new Blob(chunks,{type:'video/webm'})],'meu-gol.webm',{type:'video/webm'});
+ ok('test video generated ('+file.size+'B)',file.size>5000);
+ const dt=new DataTransfer();dt.items.add(file);$('#vf').files=dt.files;$('#vf').dispatchEvent(new Event('change',{bubbles:true}));
+ await sleep(5000);
+ ok('video segment added on top',$$('.sgi')[0]?.textContent.includes('meu-gol')&&$$('.sgi').length===13);
+ const vd=$('.vid video');
+ ok('real <video> visible in preview',!vd.hidden&&!!vd.src);
+ ok('timeline shows real frames',$$('.strip img').length>=6);
+ ok('segment thumbnail from video',!!$('.sgi img'));
+ ok('duration read',isFinite(vd.duration)&&vd.duration>1);
+ $('[data-scrub]').value=500;$('[data-scrub]').dispatchEvent(new Event('input',{bubbles:true}));await sleep(500);
+ ok('scrub seeks the video',Math.abs(vd.currentTime-vd.duration*0.5)<0.6);
+ $('.ptrans [data-act=play]').click();await sleep(1200);
+ ok('play runs real video',vd.currentTime>vd.duration*0.5+0.3||vd.ended);
+ $('.ptrans [data-act=play]').click();
+ $('[data-act=vol]').click();ok('mute toggles video',vd.muted===true);
+ $('[data-k=zoom]').value=200;$('[data-k=zoom]').dispatchEvent(new Event('input',{bubbles:true}));
+ ok('zoom acts on real video',/scale\(2\)/.test($('.vid').style.transform));
+ }catch(e){L.push('EXC '+e.message+' '+(e.stack||'').split('\n')[1])}
+ L.push('ERRS '+JSON.stringify(__e));return L.join('\n')};
+</script></body></html>

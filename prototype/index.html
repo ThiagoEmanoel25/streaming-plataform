@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Home Creators — Reels</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg1:#0a0a0c;--bg2:#050506;--card:rgba(255,255,255,.05);--tx:#f5f5f7;--mut:rgba(245,245,247,.72);--line:rgba(255,255,255,.12);--blue:#0a84ff;--green:#34c759;--red:#ff3b30;--amber:#ff9f0a}
+*{box-sizing:border-box;margin:0}
+body{font:500 14px/1.45 Montserrat,system-ui,sans-serif;color:var(--tx);background:linear-gradient(#0a0a0c,#050506) fixed;min-height:100vh}
+button,input,textarea,select{font:inherit;color:inherit}
+header{display:flex;align-items:center;gap:16px;padding:16px 24px;border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(10,10,12,.8);backdrop-filter:blur(20px);z-index:5;flex-wrap:wrap}
+.logo{font-weight:700;font-size:16px}
+nav{display:flex;gap:4px;background:var(--card);border-radius:12px;padding:4px}
+nav button{background:none;border:0;padding:8px 14px;border-radius:9px;cursor:pointer;color:var(--mut);font-weight:600}
+nav button.on{background:rgba(255,255,255,.12);color:var(--tx)}
+.who{margin-left:auto;color:var(--mut);font-size:12px}
+main{max-width:1100px;margin:0 auto;padding:24px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px}
+.grid{display:grid;gap:16px}
+h2{font-size:22px;margin-bottom:4px}h3{font-size:13px;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px}
+p.sub{color:var(--mut);margin-bottom:20px}
+.btn{background:var(--blue);border:0;border-radius:12px;padding:10px 18px;font-weight:600;cursor:pointer}
+.btn.ghost{background:var(--card);border:1px solid var(--line)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.row{display:flex;align-items:center;gap:12px;justify-content:space-between}
+.seg{display:flex;background:var(--card);border-radius:10px;padding:3px}
+.seg button{flex:1;background:none;border:0;padding:7px;border-radius:8px;cursor:pointer;color:var(--mut)}
+.seg button.on{background:rgba(255,255,255,.14);color:var(--tx)}
+label.f{display:block;margin:14px 0}label.f span{display:flex;justify-content:space-between;color:var(--mut);font-size:12px;margin-bottom:6px}
+input[type=range]{width:100%;accent-color:var(--blue)}
+/* iOS toggle */
+.tg{position:relative;width:51px;height:31px;flex:none}
+.tg input{opacity:0;position:absolute;inset:0;cursor:pointer;z-index:1;width:100%;height:100%}
+.tg i{position:absolute;inset:0;background:rgba(255,255,255,.16);border-radius:99px;transition:.2s}
+.tg i:after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 2px 4px rgba(0,0,0,.3)}
+.tg input:checked+i{background:var(--green)}.tg input:checked+i:after{transform:translateX(20px)}
+.tg input:disabled+i{opacity:.35}
+/* editor */
+.ed{grid-template-columns:260px 1fr 300px}
+.phone{margin:0 auto;background:#000;border-radius:28px;border:6px solid #1c1c1e;overflow:hidden;position:relative;width:240px;transition:aspect-ratio .25s}
+.phone.r916{aspect-ratio:9/16}.phone.r45{aspect-ratio:4/5}
+.vid{position:absolute;inset:-30%;background:radial-gradient(circle at 30% 40%,#2fa84f,#14532d 60%),#14532d;transition:transform .15s,filter .15s}
+.vid:before{content:"";position:absolute;left:50%;top:0;bottom:0;width:2px;background:rgba(255,255,255,.4)}
+.vid:after{content:"⚽";position:absolute;left:38%;top:44%;font-size:34px}
+.logoov{position:absolute;top:12px;right:12px;width:38px;height:38px;border-radius:10px;background:var(--blue);display:grid;place-items:center;font-weight:700;font-size:11px}
+.cap{position:absolute;bottom:16px;left:12px;right:12px;text-align:center;font-weight:700;font-size:13px;text-shadow:0 1px 6px #000}
+.seglist{display:flex;flex-direction:column;gap:8px}
+.segi{display:flex;gap:10px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:12px;cursor:pointer;background:var(--card)}
+.segi.on{border-color:var(--blue)}.segi b{display:block;font-size:13px}.segi small{color:var(--mut)}
+.th{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,#2fa84f,#14532d);flex:none}
+select,textarea,input[type=text]{width:100%;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;outline:none}
+textarea{resize:vertical;min-height:90px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.chip{background:var(--card);border:1px solid var(--line);border-radius:99px;padding:5px 12px;font-size:12px;cursor:pointer}
+.bar{height:8px;border-radius:9px;background:rgba(255,255,255,.1);overflow:hidden}.bar>div{height:100%;background:var(--blue);transition:width .3s}
+/* publish */
+.net{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.net:last-child{border:0}.ni{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;font-weight:700;flex:none}
+.net .nm{flex:1}.net small{color:var(--mut);display:block}
+.st{font-size:12px;font-weight:600;padding:4px 10px;border-radius:99px}
+.st.q{background:rgba(255,255,255,.1)}.st.p{background:rgba(10,132,255,.2);color:var(--blue)}
+.st.ok{background:rgba(52,199,89,.18);color:var(--green)}.st.er{background:rgba(255,59,48,.18);color:var(--red)}
+/* steps */
+.step{display:flex;gap:14px;padding:12px 0}.step em{font-style:normal;width:28px;height:28px;border-radius:50%;background:var(--blue);display:grid;place-items:center;font-weight:700;flex:none;font-size:13px}
+.step b{display:block}.step span{color:var(--mut);font-size:13px}
+.plans{grid-template-columns:repeat(3,1fr)}.plan.on{border-color:var(--blue)}.plan ul{list-style:none;padding:0;margin:14px 0;color:var(--mut)}.plan li{padding:4px 0}.plan li:before{content:"✓ ";color:var(--green)}
+.price{font-size:30px;font-weight:700}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;place-items:center;z-index:9;padding:16px}.modal.on{display:grid}
+.modal .card{background:#1c1c1e;max-width:400px;width:100%}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#2c2c2e;padding:12px 20px;border-radius:14px;border:1px solid var(--line);opacity:0;transition:.3s;pointer-events:none;z-index:10}.toast.on{opacity:1}
+.mock{font-size:11px;color:var(--amber);border:1px solid var(--amber);border-radius:99px;padding:2px 8px}
+@media(max-width:900px){.ed,.plans{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <span class="logo">Home Creators</span>
+  <nav id="nav"></nav>
+  <span class="mock">dados mockados</span>
+  <span class="who" id="who"></span>
+</header>
+<main id="app"></main>
+<div class="modal" id="modal"><div class="card" id="mbody"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ---------- MOCK DATA (trocar por chamadas à API/Supabase em prod) ----------
+const NETS=[
+ {id:'ig',n:'Instagram',c:'#e1306c',fmt:'Reels',tag:'@time.oficial'},
+ {id:'yt',n:'YouTube',c:'#ff0033',fmt:'Shorts',tag:'Canal Time FC'},
+ {id:'tt',n:'TikTok',c:'#25f4ee',fmt:'Vídeo',tag:null},
+ {id:'x',n:'X (Twitter)',c:'#ffffff',fmt:'Post',tag:null},
+ {id:'th',n:'Threads',c:'#a0a0a0',fmt:'Post',tag:null},
+ {id:'fb',n:'Facebook',c:'#1877f2',fmt:'Reels',tag:null},
+ {id:'li',n:'LinkedIn',c:'#0a66c2',fmt:'Vídeo',tag:null}];
+const SEGS=[{t:'Gol de falta',d:'12:41 · 0:14',x:0,y:0,z:1},{t:'Defesa do goleiro',d:'34:02 · 0:09',x:-10,y:5,z:1.3},{t:'Contra-ataque',d:'58:20 · 0:18',x:15,y:-5,z:1.15}];
+const TRACKS=['Sem música','Beat Estádio (biblioteca)','Torcida Épica (biblioteca)'];
+const TPL={gol:'GOOOOL! 🔥 Que pintura! #gol #futebol #highlights',defesa:'Paredão! 🧤 Salvou o time. #defesa #goleiro',highlight:'Os melhores momentos da rodada ⚡ #highlights'};
+const PLANS=[{n:'Free',p:'R$ 0',ex:5,pb:5,f:['5 exports/mês','Marca d’água','2 redes']},{n:'Pro',p:'R$ 49',ex:100,pb:200,f:['100 exports/mês','Sem marca d’água','Todas as redes','Agendamento']},{n:'Team',p:'R$ 149',ex:500,pb:1000,f:['500 exports/mês','5 usuários','Aprovação em equipe','Analytics']}];
+const S={tab:'editor',user:{email:'voce@time.com'},plan:1,used:{ex:37,pb:64},
+ conn:{ig:true,yt:true},ratio:'r916',seg:0,z:1,x:0,y:0,bright:100,sat:100,logo:true,track:0,
+ caption:'',exported:false,sel:{ig:true,yt:true},status:{},tracks:[...TRACKS]};
+
+// ---------- helpers ----------
+const $=s=>document.querySelector(s);
+const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2200)};
+const tg=(id,on,dis)=>`<label class="tg"><input type="checkbox" id="${id}" ${on?'checked':''} ${dis?'disabled':''}><i></i></label>`;
+const modal=h=>{$('#mbody').innerHTML=h;$('#modal').classList.add('on')};
+const close=()=>$('#modal').classList.remove('on');
+$('#modal').onclick=e=>{if(e.target.id==='modal')close()};
+
+// ---------- views ----------
+const V={};
+V.editor=()=>{
+ const sg=SEGS[S.seg];
+ return `<div class="grid ed">
+ <div class="card"><h3>Segmentos do preview</h3><div class="seglist">${SEGS.map((s,i)=>`<div class="segi ${i===S.seg?'on':''}" data-seg="${i}"><div class="th"></div><div><b>${s.t}</b><small>${s.d}</small></div></div>`).join('')}</div>
+  <h3 style="margin-top:20px">Música</h3>
+  <select id="track">${S.tracks.map((t,i)=>`<option value="${i}" ${i===S.track?'selected':''}>${t}</option>`).join('')}</select>
+  <button class="btn ghost" style="width:100%;margin-top:8px" id="up">+ Enviar minha música (mp3)</button>
+  <small style="color:var(--mut);display:block;margin-top:6px">Somente arquivos seus ou da biblioteca licenciada.</small></div>
+ <div class="card"><div class="phone ${S.ratio}" id="ph"><div class="vid" id="vid"></div>${S.logo?'<div class="logoov">LOGO</div>':''}<div class="cap">${sg.t}</div></div></div>
+ <div class="card"><h3>Ajustes</h3>
+  <div class="seg"><button data-r="r916" class="${S.ratio==='r916'?'on':''}">9:16</button><button data-r="r45" class="${S.ratio==='r45'?'on':''}">4:5</button></div>
+  <label class="f"><span>Zoom <b id="zv">${S.z.toFixed(2)}x</b></span><input type="range" id="z" min="1" max="2" step=".05" value="${S.z}"></label>
+  <label class="f"><span>Posição X</span><input type="range" id="x" min="-30" max="30" value="${S.x}"></label>
+  <label class="f"><span>Posição Y</span><input type="range" id="y" min="-30" max="30" value="${S.y}"></label>
+  <label class="f"><span>Brilho</span><input type="range" id="b" min="60" max="140" value="${S.bright}"></label>
+  <label class="f"><span>Saturação</span><input type="range" id="s" min="0" max="200" value="${S.sat}"></label>
+  <div class="row" style="margin:14px 0"><span>Logo do time</span>${tg('logo',S.logo)}</div>
+  <button class="btn ghost" style="width:100%;margin-bottom:8px" id="save">Salvar projeto</button>
+  <button class="btn" style="width:100%" id="exp">Exportar vídeo</button>
+  <div class="bar" style="margin-top:12px;display:none" id="eb"><div style="width:0"></div></div></div></div>`};
+V.publish=()=>`<h2>Publicar</h2><p class="sub">${S.exported?'Export pronto: highlight_'+SEGS[S.seg].t.toLowerCase().replace(/ /g,'_')+'.mp4':'Exporte um vídeo no editor primeiro.'}</p>
+ <div class="grid" style="grid-template-columns:1fr 1fr">
+ <div class="card"><h3>Legenda</h3><textarea id="cap" placeholder="Escreva a legenda...">${S.caption}</textarea>
+  <div class="chips">${Object.keys(TPL).map(k=>`<span class="chip" data-tpl="${k}">${k}</span>`).join('')}</div>
+  <small style="color:var(--mut)">Templates por esporte: toque para preencher.</small></div>
+ <div class="card"><h3>Redes</h3>${NETS.map(n=>{const c=S.conn[n.id],st=S.status[n.id];return `<div class="net"><div class="ni" style="background:${n.c}22;color:${n.c}">${n.n[0]}</div><div class="nm">${n.n}<small>${c?n.tag:'Não conectada'}</small></div>
+  ${st?`<span class="st ${st.c}">${st.t}</span>${st.c==='er'?`<button class="btn ghost" data-retry="${n.id}">Tentar de novo</button>`:''}`:c?tg('n_'+n.id,S.sel[n.id]):`<button class="btn ghost" data-go="contas">Conectar</button>`}</div>`}).join('')}
+  <button class="btn" style="width:100%;margin-top:14px" id="pub" ${S.exported?'':'disabled'}>Publicar agora</button></div></div>`;
+V.contas=()=>`<h2>Contas conectadas</h2><p class="sub">Você entra na própria rede e autoriza. Nunca pedimos sua senha.</p>
+ <div class="grid" style="grid-template-columns:1.2fr 1fr"><div class="card">${NETS.map(n=>`<div class="net"><div class="ni" style="background:${n.c}22;color:${n.c}">${n.n[0]}</div><div class="nm">${n.n}<small>${S.conn[n.id]?n.tag:'Não conectada'}</small></div>
+ <button class="btn ${S.conn[n.id]?'ghost':''}" data-conn="${n.id}">${S.conn[n.id]?'Desconectar':'Conectar'}</button></div>`).join('')}</div>
+ <div class="card"><h3>Como conectar com segurança</h3>
+ ${[['Toque em Conectar','Escolha a rede que quer usar.'],['Entre na sua conta','Abre a página oficial da rede, não a nossa.'],['Toque em Permitir','Você autoriza só o envio de vídeos.'],['Pronto','Para desligar, toque em Desconectar quando quiser.']].map((s,i)=>`<div class="step"><em>${i+1}</em><div><b>${s[0]}</b><span>${s[1]}</span></div></div>`).join('')}</div></div>`;
+V.planos=()=>{const p=PLANS[S.plan];return `<h2>Plano e uso</h2><p class="sub">Limites de export e publicação conforme o plano.</p>
+ <div class="card" style="margin-bottom:16px"><h3>Uso neste mês (${p.n})</h3>
+ <div class="row"><span>Exports</span><span>${S.used.ex}/${p.ex}</span></div><div class="bar"><div style="width:${S.used.ex/p.ex*100}%"></div></div>
+ <div class="row" style="margin-top:12px"><span>Publicações</span><span>${S.used.pb}/${p.pb}</span></div><div class="bar"><div style="width:${S.used.pb/p.pb*100}%"></div></div></div>
+ <div class="grid plans">${PLANS.map((q,i)=>`<div class="card plan ${i===S.plan?'on':''}"><h3>${q.n}</h3><div class="price">${q.p}<small style="font-size:13px;color:var(--mut)">/mês</small></div><ul>${q.f.map(f=>`<li>${f}</li>`).join('')}</ul><button class="btn ${i===S.plan?'ghost':''}" data-plan="${i}">${i===S.plan?'Plano atual':'Escolher'}</button></div>`).join('')}</div>`};
+
+// ---------- render + events ----------
+const TABS={editor:'Editor Reels',publish:'Publicar',contas:'Contas',planos:'Planos'};
+function render(){
+ $('#nav').innerHTML=Object.entries(TABS).map(([k,v])=>`<button data-tab="${k}" class="${k===S.tab?'on':''}">${v}</button>`).join('');
+ $('#who').textContent=S.user.email+' · '+PLANS[S.plan].n;
+ $('#app').innerHTML=V[S.tab]();bind();applyFx()}
+function applyFx(){const v=$('#vid');if(v){v.style.transform=`translate(${S.x}%,${S.y}%) scale(${S.z})`;v.style.filter=`brightness(${S.bright}%) saturate(${S.sat}%)`}}
+const on=(s,ev,f)=>document.querySelectorAll(s).forEach(e=>e.addEventListener(ev,f));
+function bind(){
+ on('[data-tab]','click',e=>{S.tab=e.currentTarget.dataset.tab;render()});
+ on('[data-go]','click',e=>{S.tab=e.currentTarget.dataset.go;render()});
+ on('[data-seg]','click',e=>{const s=SEGS[S.seg=+e.currentTarget.dataset.seg];Object.assign(S,{x:s.x,y:s.y,z:s.z});render()});
+ on('[data-r]','click',e=>{S.ratio=e.currentTarget.dataset.r;render()});
+ [['z','z'],['x','x'],['y','y'],['b','bright'],['s','sat']].forEach(([id,k])=>{const el=$('#'+id);if(el)el.addEventListener('input',()=>{S[k]=+el.value;if(id==='z')$('#zv').textContent=S.z.toFixed(2)+'x';applyFx()})});
+ const lg=$('#logo');if(lg)lg.onchange=()=>{S.logo=lg.checked;render()};
+ const tr=$('#track');if(tr)tr.onchange=()=>S.track=+tr.value;
+ const up=$('#up');if(up)up.onclick=()=>{S.tracks.push('Minha música '+(S.tracks.length-2)+'.mp3 (enviada)');S.track=S.tracks.length-1;toast('Música salva na sua biblioteca');render()};
+ const sv=$('#save');if(sv)sv.onclick=()=>toast('Projeto salvo na sua biblioteca');
+ const ex=$('#exp');if(ex)ex.onclick=()=>{const b=$('#eb');b.style.display='block';ex.disabled=true;let p=0;const t=setInterval(()=>{p+=8;b.firstChild.style.width=Math.min(p,100)+'%';if(p>=100){clearInterval(t);S.exported=true;S.status={};S.used.ex++;toast('Export pronto!');S.tab='publish';render()}},150)};
+ const cp=$('#cap');if(cp)cp.oninput=()=>S.caption=cp.value;
+ on('[data-tpl]','click',e=>{S.caption=TPL[e.currentTarget.dataset.tpl];render()});
+ NETS.forEach(n=>{const el=$('#n_'+n.id);if(el)el.onchange=()=>S.sel[n.id]=el.checked});
+ const pb=$('#pub');if(pb)pb.onclick=()=>{const ids=NETS.filter(n=>S.conn[n.id]&&S.sel[n.id]).map(n=>n.id);if(!ids.length)return toast('Escolha ao menos uma rede');ids.forEach(id=>send(id,id==='yt'&&!S.retried))};
+ on('[data-retry]','click',e=>{S.retried=true;send(e.currentTarget.dataset.retry,false)});
+ on('[data-conn]','click',e=>{const id=e.currentTarget.dataset.conn,n=NETS.find(x=>x.id===id);
+  if(S.conn[id]){S.conn[id]=false;delete S.sel[id];return render()}
+  modal(`<h2>Conectar ${n.n}</h2><p class="sub">Você será levado à página oficial do ${n.n} para autorizar. (simulado)</p><div class="row"><button class="btn ghost" onclick="close()">Cancelar</button><button class="btn" id="ok">Permitir</button></div>`);
+  $('#ok').onclick=()=>{S.conn[id]=true;S.sel[id]=true;n.tag=n.tag||'@conta.exemplo';close();toast(n.n+' conectado');render()}});
+ on('[data-plan]','click',e=>{const i=+e.currentTarget.dataset.plan;if(i===S.plan)return;
+  modal(`<h2>Assinar ${PLANS[i].n}</h2><p class="sub">Checkout do Stripe abriria aqui. (simulado)</p><div class="row"><button class="btn ghost" onclick="close()">Cancelar</button><button class="btn" id="ok">Simular pagamento</button></div>`);
+  $('#ok').onclick=()=>{S.plan=i;close();toast('Plano '+PLANS[i].n+' ativo');render()}})}
+// fila -> publicando -> sucesso/falha (falha simulada no YouTube na 1ª tentativa)
+function send(id,fail){S.status[id]={c:'q',t:'Na fila'};render();
+ setTimeout(()=>{S.status[id]={c:'p',t:'Publicando…'};render()},700);
+ setTimeout(()=>{S.status[id]=fail?{c:'er',t:'Falhou: limite da API'}:{c:'ok',t:'Publicado'};if(!fail)S.used.pb++;render()},2000)}
+render();
+</script>
+</body>
+</html>
