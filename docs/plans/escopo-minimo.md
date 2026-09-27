@@ -1,5 +1,24 @@
 # Plano — fechar o escopo mínimo
 
+## Segunda mudança de rumo (decisão do cliente): publicar de verdade no YouTube
+
+O cliente quer publicar no **canal dele de verdade**, ainda para o teste técnico. Isso reverte
+parte da decisão anterior.
+
+Correção importante de premissa: um app do Google em modo de teste **não precisa de verificação**
+para subir vídeo no canal do próprio dono — o vídeo apenas entra como privado. E o YouTube
+**recebe os bytes** (upload resumable), em vez de buscar numa URL pública como o Instagram.
+Consequência: **não é preciso túnel, nem bucket público, nem a Task 2 (storage S3)** para este teste.
+Basta o backend conseguir ler o mp4 que o render produziu, o que acontece dentro da rede do Docker.
+
+- Task 3 (ligar o export ponta a ponta) **volta**, usando o servidor de arquivos do próprio render
+  (`/files/<key>`) como origem do mp4. Task 2 (S3/MinIO) **segue descartada** — vira assunto do
+  documento de escala.
+- Entram a Task 10 (YouTube real) e a Task 11 (tutorial de conexão à altura do fluxo real).
+- Instagram fica para depois: exige conta Business ligada a uma Página e URL pública do vídeo.
+
+Ordem: **3 → 10 → 11 → 7 → 8+9**.
+
 ## Mudança de rumo (decisão do cliente)
 
 O alvo é **um MVP para teste técnico + um documento de escala**, não um produto em produção.
@@ -101,10 +120,12 @@ Instagram consiga baixar.
 **Teste obrigatório:** subir MinIO, renderizar, e baixar o objeto pela URL devolvida conferindo que
 é um mp4 válido (ffprobe) e que o tamanho bate.
 
-## Task 3 — Ligar o export real ponta a ponta — **DESCARTADA**
+## Task 3 — Ligar o export real ponta a ponta — **REATIVADA**
 
-> Descartada com a mudança de rumo. O requisito da marca na receita cai junto: sem render ligado,
-> o overlay de logo continua valendo só na interface.
+> Reativada pela segunda mudança de rumo. Ajustes sobre o texto original abaixo: a origem do mp4 é
+> o servidor de arquivos do próprio render (`RENDER_PUBLIC_URL` → `/files/<key>`), **não** o S3/MinIO
+> (Task 2 segue descartada). O requisito da marca na receita **continua valendo**, agora que o render
+> volta a ser ligado.
 
 
 - `backend/src/render.js`: aceitar `RENDER_URL` (se presente, é para lá que o job vai; senão monta a
@@ -223,6 +244,50 @@ apontar (falha isolada por rede com retry, limites do plano vindos do servidor, 
 Incluir uma seção "o que dizer sobre o que é simulado" — a frase honesta e curta para cada parte,
 para que ninguém seja pego de surpresa numa pergunta. Incluir também
 `sh render/test.sh` como prova opcional de que o render real existe.
+
+## Task 10 — Publicar de verdade no YouTube
+
+Fazer o `SOCIAL_MODE=live` funcionar para o YouTube, contra o canal do próprio cliente.
+
+- **OAuth real no app.** Hoje `connect()` em `dashboard/js/services/social.js` detecta que a URL de
+  autorização é da mesma origem e a busca com `fetch` — isso só serve para o provedor simulado.
+  No fluxo real o navegador precisa **sair** para o Google (`location.href`), o usuário autoriza lá,
+  e o Google devolve para `/api/social/youtube/callback`, que por sua vez redireciona de volta ao app
+  com `?social=youtube&status=connected|cancelled|error`. O app tem de ler esse retorno ao carregar,
+  avisar o resultado e atualizar a lista de contas. Hoje ninguém lê esses parâmetros.
+- **Credenciais**: `YT_CLIENT_ID` e `YT_CLIENT_SECRET` por variável de ambiente, nunca no código nem
+  em log. O redirect é `http://localhost:8080/api/social/youtube/callback` no ambiente local.
+- **Envio**: `backend/src/social/youtube.js` já tem o fluxo resumable escrito e **nunca executado**.
+  Fazer funcionar de verdade: ler o mp4 da URL do export (dentro da rede do Docker), enviar, e
+  tratar os erros reais que aparecerem (formato, cota, escopo, token expirado) com mensagem em
+  português na interface.
+- **Modo misto**: `SOCIAL_MODE=live` não pode quebrar as outras 6 redes, que seguem simuladas.
+  Decidir e documentar como as duas coisas convivem (por rede, não global).
+- Sem credenciais configuradas, o app tem de continuar rodando inteiro no modo simulado.
+
+Não é possível testar automaticamente contra o Google. O teste é manual, com o cliente, e o
+relatório deve dizer exatamente o que foi observado — inclusive os erros do caminho.
+
+## Task 11 — Tutorial de conexão à altura do fluxo real
+
+O escopo pede "tutorial simples no app: como o usuário conecta a conta dele com segurança (passo a
+passo na UI, sem jargão técnico)". O assistente de 4 passos existe, mas foi escrito para o fluxo
+simulado, em que nada sai do app. Com OAuth real a experiência muda e o tutorial tem de preparar a
+pessoa para o que vai acontecer:
+
+- **Antes**: dizer o que a pessoa vai ver — "você vai sair daqui e entrar na página do YouTube",
+  "a senha é digitada lá, não aqui", "você escolhe o canal", "pode voltar quando quiser".
+- **Pré-requisitos por rede**, antes de começar, para ninguém descobrir no meio: YouTube precisa de um
+  canal; Instagram precisa de conta Business ou Criador ligada a uma Página do Facebook. Se a pessoa
+  não tiver, o tutorial diz como resolver, em português simples.
+- **O que a permissão dá e o que não dá**: "só enviar vídeos"; não lê mensagens, não muda senha,
+  não apaga nada.
+- **Como desfazer**: onde desconectar no app e que também dá para revogar na própria rede.
+- **Na volta**: tratar os três desfechos — conectou, cancelou, deu erro — cada um com um texto claro
+  e o que fazer a seguir. Cancelar não é erro e não pode parecer erro.
+- Continuar sem jargão: nada de "token", "OAuth", "escopo", "API".
+
+Cobrir com teste o que dá: os três desfechos do retorno e o texto de pré-requisito por rede.
 
 ## Verificação final
 
