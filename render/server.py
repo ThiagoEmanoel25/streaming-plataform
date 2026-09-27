@@ -17,6 +17,9 @@ OUT_DIR = os.environ.get('OUT_DIR', '/app/out')
 PUBLIC_URL = os.environ.get('RENDER_PUBLIC_URL', 'http://localhost:9000').rstrip('/')
 PORT = int(os.environ.get('PORT', '9000'))
 MIME = {'.mp4': 'video/mp4'}
+MAX_CONCURRENT_JOBS = int(os.environ.get('MAX_CONCURRENT_JOBS', '3'))
+_jobs_lock = threading.Lock()
+_running_jobs = [0]  # lista p/ mutar de dentro da thread sem `global`
 
 
 def safe_key(key):
@@ -42,19 +45,25 @@ def post_webhook(url, body):
                                      headers={'content-type': 'application/json'})
         urllib.request.urlopen(req, timeout=15).read()
     except Exception as e:  # o job nao morre porque o webhook caiu
-        print('[render] webhook falhou: %s' % e, flush=True)
+        # nunca logar str(e): URLError/InvalidURL podem trazer a url (com token) dentro
+        print('[render] webhook falhou: %s' % type(e).__name__, flush=True)
 
 
 def run_job(job_id, payload):
-    body = payload.get('input') or {}
-    webhook = payload.get('webhook')  # contem token: nunca logar
-    export_id = body.get('export_id')
-    key = safe_key((body.get('output') or {}).get('key')) or '%s.mp4' % job_id
-    tmp = os.path.join(OUT_DIR, '.tmp-%s.mp4' % job_id)
-    os.makedirs(OUT_DIR, exist_ok=True)
-    post_webhook(webhook, {'export_id': export_id, 'status': 'IN_PROGRESS',
-                           'progress': 10, 'phase': 'Renderizando'})
+    # tudo dentro do try: qualquer falha (inclusive setup) termina em webhook
+    # FAILED -- senao o export fica travado pra sempre (o backend nao tem timeout).
+    webhook = (payload or {}).get('webhook')  # contem token: nunca logar
+    export_id = None
+    tmp = None
     try:
+        body = payload.get('input') or {}
+        webhook = payload.get('webhook')
+        export_id = body.get('export_id')
+        key = safe_key((body.get('output') or {}).get('key')) or '%s.mp4' % job_id
+        tmp = os.path.join(OUT_DIR, '.tmp-%s.mp4' % job_id)
+        os.makedirs(OUT_DIR, exist_ok=True)
+        post_webhook(webhook, {'export_id': export_id, 'status': 'IN_PROGRESS',
+                               'progress': 10, 'phase': 'Renderizando'})
         size_mb = renderer.render(body, tmp)
         url = store_output(tmp, key)
         print('[render] %s ok -> %s (%s MB)' % (job_id, key, size_mb), flush=True)
@@ -62,10 +71,13 @@ def run_job(job_id, payload):
                                'output': {'url': url, 'size_mb': size_mb}})
     except Exception as e:
         traceback.print_exc()
-        if os.path.exists(tmp):
+        if tmp and os.path.exists(tmp):
             os.remove(tmp)
         post_webhook(webhook, {'export_id': export_id, 'status': 'FAILED',
                                'error': str(e)[-500:] or 'Falha ao renderizar.'})
+    finally:
+        with _jobs_lock:
+            _running_jobs[0] -= 1
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -112,6 +124,10 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(400, {'error': 'JSON inválido.'})
         if not isinstance(payload, dict) or not isinstance(payload.get('input'), dict):
             return self._json(400, {'error': 'Esperado { "input": {...} }.'})
+        with _jobs_lock:
+            if _running_jobs[0] >= MAX_CONCURRENT_JOBS:
+                return self._json(429, {'error': 'Worker ocupado, tente novamente em breve.'})
+            _running_jobs[0] += 1
         job_id = 'job_' + uuid.uuid4().hex[:12]
         threading.Thread(target=run_job, args=(job_id, payload), daemon=True).start()
         self._json(202, {'id': job_id})

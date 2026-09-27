@@ -14,6 +14,9 @@ trap cleanup EXIT
 fail() { echo "FALHOU: $*" >&2; exit 1; }
 eq() { [ "$2" = "$3" ] || fail "$1: esperado '$3', veio '$2'"; }
 
+echo "==> unit (build_command, sem docker)"
+python3 test_build_command.py -v || fail "unit build_command"
+
 echo "==> build"
 docker build -q -t "$IMG" . >/dev/null
 
@@ -49,8 +52,7 @@ run_case() { # $1 export_id  $2 key  $3 ratio  $4 duracao  $5 largura  $6 altura
   "recipe":{"ratio":"$ratio","zoom":1.2,"x":3,"y":-6,
     "bright":10,"contrast":12,"sat":8,"temp":-20,
     "trackId":"t1",
-    "overlays":[{"kind":"text","text":"QUE GOLAÇO 100% 🔥","x":-14,"y":38,"size":26,"opacity":1},
-                {"kind":"logo","x":-38,"y":-42,"size":18,"opacity":1}],
+    "overlays":[{"kind":"text","text":"QUE GOLAÇO 100% 🔥","x":-14,"y":38,"size":26,"opacity":1}],
     "keyframes":[{"t":0,"zoom":1,"x":0,"y":0},{"t":0.6,"zoom":1.4,"x":-4,"y":-8}]}},
  "webhook":"http://127.0.0.1:9999/hook"}
 JSON

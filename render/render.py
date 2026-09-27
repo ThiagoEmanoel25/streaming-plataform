@@ -9,6 +9,8 @@ import base64, os, re, shutil, subprocess, tempfile
 
 RATIOS = {'9:16': (1080, 1920), '4:5': (1080, 1350)}
 FPS = 30
+MAX_DURATION = 300  # teto de duracao do export, segundos
+FFMPEG_TIMEOUT = 600  # segundos; generoso p/ MAX_DURATION a `veryfast`
 # .vid e' `position:absolute;inset:-20%` -> o elemento do video mede 140% do
 # quadro. O translate() do CSS e' em % desse elemento, e com zoom=1 o quadro
 # mostra 1/1.4 do video. Sem esse fator o render nao bate com o preview.
@@ -129,15 +131,17 @@ def _overlays(recipe, w, h, workdir):
 
 
 def _decode_src(src, workdir, i):
+    """Aceita só `data:` URI -- é tudo que o editor produz (FileReader.readAsDataURL
+    em dashboard/js/views/reels.js). Um caminho de arquivo local NUNCA é aceito aqui:
+    a receita é controlada pelo usuário e um caminho local deixaria compor o export
+    de outro usuário (ex.: /app/out/<outro-user>/<export>.mp4) no seu próprio vídeo."""
     m = re.match(r'^data:image/(\w+);base64,(.+)$', src or '', re.S)
-    if m:
-        p = os.path.join(workdir, 'ov%d.%s' % (i, m.group(1)))
-        with open(p, 'wb') as f:
-            f.write(base64.b64decode(m.group(2)))
-        return p
-    if src and os.path.isfile(src):
-        return src
-    return None
+    if not m:
+        return None
+    p = os.path.join(workdir, 'ov%d.%s' % (i, m.group(1)))
+    with open(p, 'wb') as f:
+        f.write(base64.b64decode(m.group(2)))
+    return p
 
 
 def find_source(source_key):
@@ -151,9 +155,19 @@ def find_source(source_key):
     return None
 
 
+def _has_audio(path):
+    try:
+        p = subprocess.run(
+            ['ffprobe', '-v', 'error', '-select_streams', 'a', '-show_entries', 'stream=index',
+             '-of', 'csv=p=0', path], capture_output=True, text=True, timeout=10)
+        return bool(p.stdout.strip())
+    except Exception:
+        return False
+
+
 def build_command(job_input, out_path, workdir):
     recipe = job_input.get('recipe') or {}
-    dur = max(0.5, _num(job_input.get('duration'), 10) or 10)
+    dur = min(MAX_DURATION, max(0.5, _num(job_input.get('duration'), 10) or 10))
     w, h = RATIOS.get(recipe.get('ratio'), RATIOS['9:16'])
     src = find_source(job_input.get('source_key'))
     total = int(round(dur * FPS))
@@ -195,7 +209,9 @@ def build_command(job_input, out_path, workdir):
     else:
         graph.append('[%s]null[vout]' % cur)
 
-    cmd += ['-filter_complex', ';'.join(graph), '-map', '[vout]', '-map', '1:a',
+    # audio real quando a fonte tem trilha; senao cai no anullsrc (entrada 1)
+    audio_map = '0:a' if (src and _has_audio(src)) else '1:a'
+    cmd += ['-filter_complex', ';'.join(graph), '-map', '[vout]', '-map', audio_map,
             '-t', '%.3f' % dur, '-r', str(FPS),
             '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20', '-pix_fmt', 'yuv420p',
             '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart', out_path]
@@ -207,7 +223,10 @@ def render(job_input, out_path):
     workdir = tempfile.mkdtemp(prefix='render-')
     try:
         cmd = build_command(job_input, out_path, workdir)
-        p = subprocess.run(cmd, capture_output=True, text=True)
+        try:
+            p = subprocess.run(cmd, capture_output=True, text=True, timeout=FFMPEG_TIMEOUT)
+        except subprocess.TimeoutExpired:
+            raise RuntimeError('ffmpeg excedeu o tempo limite (%ds).' % FFMPEG_TIMEOUT)
         if p.returncode != 0 or not os.path.isfile(out_path) or os.path.getsize(out_path) == 0:
             raise RuntimeError((p.stderr or 'ffmpeg falhou').strip()[-2000:])
         if p.stderr.strip():  # avisos do ffmpeg sao mudos demais para ficarem escondidos

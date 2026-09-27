@@ -75,8 +75,12 @@ Substitutos, porque as peças ainda não existem neste repositório:
 - **Áudio.** Não há acervo de faixas neste repositório, então `trackId` não
   resolve para arquivo nenhum e o mp4 sai com uma trilha **AAC silenciosa**
   (`anullsrc`) — o arquivo sempre tem áudio, só não tem som.
-- **Overlay `kind: "logo"`.** A marca (`brand.logoSrc`) é estado global do
-  dashboard, não vai na receita do projeto, então esses overlays são ignorados.
+- **Overlay `kind: "logo"` não é renderizado.** A marca (`brand.logoSrc`) é
+  estado global do dashboard e não vai na receita do projeto (`brandOv()` em
+  `dashboard/js/views/reels.js` não inclui `src`) -- não tem dado nenhum pra
+  desenhar. `render.py` ignora esses overlays em silêncio. Carregar a marca pra
+  dentro da receita é escopo da Tarefa 3, não desta tarefa; `test.sh` não manda
+  overlay `logo` porque não haveria nada real pra afirmar sobre ele.
 - **Armazenamento.** O mp4 fica em disco (`OUT_DIR`) e é servido em
   `GET /files/<key>`. A troca por S3/MinIO é a Tarefa 2: o único ponto a mudar é
   `store_output()` em `server.py`.
