@@ -89,9 +89,29 @@ def _esc_path(p):
     return p.replace('\\', '\\\\').replace(':', r'\:').replace("'", r"\'")
 
 
+def _initials(name):
+    """Espelha `initials()` de dashboard/js/ui/components.js -- fallback do logo-mark."""
+    words = [w for w in str(name or '').split() if w]
+    return ''.join(w[0] for w in words)[:3].upper()
+
+
+def _drawtext(text, size, op, cx, cy, workdir, name):
+    """Um bloco de texto centrado em (cx,cy), estilo comum a legenda de texto e marca."""
+    fp = os.path.join(workdir, '%s.txt' % name)
+    with open(fp, 'w', encoding='utf-8') as f:
+        f.write(text)
+    # expansion=none: sem isso um "%" no texto vira "Stray %" e o drawtext
+    # descarta a linha inteira, em silencio.
+    return ("drawtext=fontfile=%s:textfile=%s:expansion=none:fontsize=%.2f:fontcolor=white@%.3f"
+            ":box=1:boxcolor=black@%.3f:boxborderw=%d"
+            ":x=%.1f-text_w/2:y=%.1f-text_h/2"
+            % (_esc_path(FONT), _esc_path(fp), size, op, 0.5 * op, int(size * 0.5), cx, cy))
+
+
 def _overlays(recipe, w, h, workdir):
     """Devolve (inputs_extra, filtros_de_overlay, filtros_drawtext)."""
     inputs, chains, texts = [], [], []
+    brand = recipe.get('brand') if isinstance(recipe.get('brand'), dict) else {}
     for i, o in enumerate(recipe.get('overlays') or []):
         if not isinstance(o, dict):
             continue
@@ -101,24 +121,25 @@ def _overlays(recipe, w, h, workdir):
             txt = str(o.get('text') or '')
             if not txt:
                 continue
-            fp = os.path.join(workdir, 'txt%d.txt' % i)
-            with open(fp, 'w', encoding='utf-8') as f:
-                f.write(txt)
             # font-size: calc(var(--w) * size * 0.002), --w = largura do quadro
             size = max(8.0, _num(o.get('size'), 24) * 0.002 * w)
-            texts.append(
-                # expansion=none: sem isso um "%" no texto vira "Stray %" e o drawtext 
-                # descarta a linha inteira, em silencio.
-                "drawtext=fontfile=%s:textfile=%s:expansion=none:fontsize=%.2f:fontcolor=white@%.3f"
-                ":box=1:boxcolor=black@%.3f:boxborderw=%d"
-                ":x=%.1f-text_w/2:y=%.1f-text_h/2"
-                % (_esc_path(FONT), _esc_path(fp), size, op, 0.5 * op, int(size * 0.5),
-                   cx * w, cy * h))
+            texts.append(_drawtext(txt, size, op, cx * w, cy * h, workdir, 'txt%d' % i))
             continue
-        src = o.get('src') or ''
-        path = _decode_src(src, workdir, i)
+        if o.get('kind') == 'logo':
+            path = _decode_src(brand.get('logoSrc'), workdir, i) if brand.get('logoSrc') else None
+            if not path:
+                # sem logo enviado: iniciais do nome da marca, igual ao fallback
+                # `logo-mark` do app (ui/components.js) -- sem nome, não ha' o que desenhar.
+                init = _initials(brand.get('name'))
+                if not init:
+                    continue
+                size = max(8.0, _num(o.get('size'), 20) * 0.006 * w)
+                texts.append(_drawtext(init, size, op, cx * w, cy * h, workdir, 'brand%d' % i))
+                continue
+        else:
+            path = _decode_src(o.get('src') or '', workdir, i)
         if not path:
-            continue  # kind=logo (a marca nao vem na receita) ou src nao resolvido
+            continue  # src nao resolvido
         side = max(2.0, _num(o.get('size'), 20) / 100.0 * w)
         idx = len(chains) + 2  # entradas 0 = video, 1 = audio silencioso
         inputs += ['-i', path]

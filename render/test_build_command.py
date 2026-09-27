@@ -69,6 +69,35 @@ class BuildCommandTest(unittest.TestCase):
         graph = self._graph({'ratio': '9:16'})
         self.assertNotIn('boxcolor=black', graph)
 
+    def test_logo_sem_marca_nao_desenha_nada(self):
+        # sem `recipe.brand`, kind=logo é ignorado (compat com receitas antigas).
+        # boxcolor=black só existe no drawtext de overlay (texto/marca), nunca na
+        # legenda "SINTETICO" do clipe sem fonte -- ver test_sem_overlays_... acima.
+        graph = self._graph({'ratio': '9:16', 'overlays': [{'kind': 'logo', 'size': 20, 'opacity': 1}]})
+        self.assertNotIn('boxcolor=black', graph)
+        self.assertNotIn('overlay=', graph)
+
+    def test_logo_com_nome_desenha_iniciais(self):
+        graph = self._graph({'ratio': '9:16', 'brand': {'name': 'Home Creators'},
+                             'overlays': [{'kind': 'logo', 'size': 20, 'opacity': 1}]})
+        self.assertIn('boxcolor=black', graph)
+
+    def test_marca_muda_o_comando_de_render(self):
+        # requisito da Tarefa 3: uma receita com marca tem de gerar um mp4 diferente
+        # da mesma receita sem marca -- aqui a prova é que o comando do ffmpeg muda.
+        sem_marca = self._graph({'ratio': '9:16', 'overlays': [{'kind': 'logo', 'size': 20, 'opacity': 1}]})
+        com_marca = self._graph({'ratio': '9:16', 'brand': {'name': 'Home Creators'},
+                                 'overlays': [{'kind': 'logo', 'size': 20, 'opacity': 1}]})
+        self.assertNotEqual(sem_marca, com_marca)
+
+    def test_logo_com_imagem_usa_overlay_em_vez_de_texto(self):
+        px = ('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBA'
+              'ScY42YAAAAASUVORK5CYII=')
+        graph = self._graph({'ratio': '9:16', 'brand': {'name': 'Home Creators', 'logoSrc': px},
+                             'overlays': [{'kind': 'logo', 'size': 20, 'opacity': 1}]})
+        self.assertIn('overlay=', graph)
+        self.assertNotIn('boxcolor=black', graph)
+
     def test_duracao_tem_teto(self):
         cmd = self._graph({'ratio': '9:16'}, duration=999999)
         self.assertIn('-t', cmd)
