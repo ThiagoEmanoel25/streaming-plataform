@@ -26,6 +26,9 @@ window.__run=async()=>{const L=[];const ok=(n,c)=>L.push((c?'PASS ':'FAIL ')+n);
 
  // editar e exportar -> o projeto e o export nascem no servidor
  click('[data-route=reels]');await sleep(1200);
+ const segs=await call('GET','/segments');
+ ok('segmentos vieram do D1 (não do array local)',segs.segments.length===12&&segs.segments[0].id==='s1');
+ ok('painel Reels mostra os 12 segmentos do backend',$$('.sgi').length===12);
  const zoom=$('[data-k=zoom]');zoom.value=140;zoom.dispatchEvent(new Event('input',{bubbles:true}));zoom.dispatchEvent(new Event('change',{bubbles:true}));
  click('[data-act=save]');await sleep(300);
  click('.rl-top [data-act=export]');await sleep(800);

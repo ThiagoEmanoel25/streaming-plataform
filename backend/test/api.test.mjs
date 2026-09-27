@@ -39,6 +39,21 @@ test('saúde e autenticação', async () => {
   assert.equal((await client(env, ctx, `${head}.${body}.`).get('/api/me')).status, 401, 'alg none -> 401');
 });
 
+test('segmentos: exige sessão e vem do seed do D1, igual pra qualquer usuário', async () => {
+  const { env, ctx, api } = await setup();
+  const anon = client(env, ctx);
+  assert.equal((await anon.get('/api/segments')).status, 401, 'sem token -> 401');
+
+  const r = await api.get('/api/segments');
+  assert.equal(r.status, 200);
+  assert.equal(r.data.segments.length, 12);
+  assert.deepEqual(Object.keys(r.data.segments[0]).sort(), ['dur', 'id', 'range', 'seed', 'tag', 'title']);
+  assert.deepEqual(r.data.segments[0], { id: 's1', title: 'Gol de falta', tag: 'Gol', range: '12:41 - 12:55', dur: 14, seed: 130 });
+
+  const apiB = client(env, ctx, await signJWT({ sub: 'user-b', email: 'b@test.com' }, SECRET));
+  assert.deepEqual((await apiB.get('/api/segments')).data, r.data, 'não é filtrado por usuário: é dado da partida');
+});
+
 test('/api/me cria o usuário no plano starter', async () => {
   const { api } = await setup();
   const me = (await api.get('/api/me')).data;

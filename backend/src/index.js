@@ -37,6 +37,12 @@ route('GET', '/api/me', async ({ env, user }) => {
   });
 });
 
+// ---------- segmentos ----------
+// Cortes da partida, vindos do pipeline de detecção de lances (fora deste repo); a rota exige
+// sessão como o resto da API, mas não filtra por usuário — segmento não é dado do usuário.
+const segmentOut = (s) => ({ id: s.id, title: s.title, tag: s.tag, range: s.range, dur: s.dur, seed: s.seed });
+route('GET', '/api/segments', async ({ env }) => json({ segments: (await db.listSegments(env.DB)).map(segmentOut) }));
+
 // ---------- projetos ----------
 const projectOut = (p) => ({ id: p.id, name: p.name, segmentId: p.segment_id, duration: p.duration, data: JSON.parse(p.data), updatedAt: p.updated_at });
 

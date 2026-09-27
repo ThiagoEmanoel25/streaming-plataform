@@ -94,3 +94,27 @@ create table if not exists oauth_states (
   redirect   text,
   created_at text not null
 );
+
+-- Cortes da partida. Não são dados do usuário (por isso sem user_id) — hoje populados pelo
+-- seed abaixo; em produção o pipeline de detecção de lances (fora deste repo) escreve aqui.
+create table if not exists segments (
+  id    text primary key,
+  title text not null,
+  tag   text not null,
+  range text not null,
+  dur   real not null,
+  seed  integer not null
+);
+insert or ignore into segments (id, title, tag, range, dur, seed) values
+  ('s1', 'Gol de falta', 'Gol', '12:41 - 12:55', 14, 130),
+  ('s2', 'Defesa incrível', 'Defesa', '34:02 - 34:11', 9, 200),
+  ('s3', 'Contra-ataque', 'Highlight', '58:20 - 58:38', 18, 95),
+  ('s4', 'Pênalti decisivo', 'Gol', '71:10 - 71:22', 12, 160),
+  ('s5', 'Drible e assistência', 'Highlight', '77:45 - 78:01', 16, 270),
+  ('s6', 'Comemoração', 'Vitória', '90:03 - 90:14', 11, 20),
+  ('s7', 'Chute de fora da área', 'Gol', '22:15 - 22:25', 10, 300),
+  ('s8', 'Escanteio perigoso', 'Highlight', '41:30 - 41:43', 13, 50),
+  ('s9', 'Bola na trave', 'Highlight', '49:08 - 49:16', 8, 240),
+  ('s10', 'Carrinho salvador', 'Defesa', '63:50 - 63:57', 7, 180),
+  ('s11', 'Gol anulado (VAR)', 'Gol', '67:22 - 67:42', 20, 330),
+  ('s12', 'Pressão final', 'Melhores momentos', '88:05 - 88:20', 15, 110);

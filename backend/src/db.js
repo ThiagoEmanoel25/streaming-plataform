@@ -74,6 +74,9 @@ export const patchPublication = (db, id, patch) => {
   return run(db, `update publications set ${keys.map((k) => `${k} = ?`).join(', ')}, updated_at = ? where id = ?`, ...keys.map((k) => patch[k]), now(), id);
 };
 
+// cortes da partida: sem user_id de propósito (não são dados do usuário, ver schema.sql)
+export const listSegments = (db) => all(db, 'select * from segments order by id');
+
 export const saveOAuthState = (db, state, userId, network, redirect) => run(db, 'insert into oauth_states (state, user_id, network, redirect, created_at) values (?,?,?,?,?)', state, userId, network, redirect || null, now());
 export async function takeOAuthState(db, state) {
   const row = await one(db, 'select * from oauth_states where state = ?', state);

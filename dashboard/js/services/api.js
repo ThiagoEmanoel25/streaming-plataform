@@ -83,7 +83,11 @@ const POSTS = [
 const SERIES = [3100, 5200, 4100, 8900, 7600, 12400, 9800];
 
 export const api = {
-  async segments() { await sleep(500); return SEGMENTS; },
+  async segments() {
+    if (live()) return (await call('GET', '/segments')).segments;
+    await sleep(500);
+    return SEGMENTS;
+  },
 
   async analytics() {
     await sleep(600);
