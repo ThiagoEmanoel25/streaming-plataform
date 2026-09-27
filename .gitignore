@@ -6,3 +6,4 @@ backend/.dev.vars
 
 # workspace do subagent-driven-development (scratch)
 .superpowers/
+__pycache__/
