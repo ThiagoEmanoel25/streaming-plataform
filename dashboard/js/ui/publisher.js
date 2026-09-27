@@ -41,9 +41,10 @@ function paintNets(root) {
   const box = $('.p-nets', root); if (!box) return;
   box.innerHTML = providers.list().map((p) => {
     const st = pd().statuses[p.id], a = p.account;
-    const right = st
+    const right = a.needsReauth
+      ? `<div class="st">${pill('Precisa reconectar', 'err')}<button class="btn ghost sm" data-reauth="${p.id}">${icon('refresh', 14)} Reconectar</button></div>`
+      : st
       ? `<div class="st">${statusPill(st.status)}${st.msg ? `<small class="${st.status === 'failed' ? 'err-t' : 'muted'}">${esc(st.msg)}</small>` : ''}${st.status === 'failed' ? `<button class="btn ghost sm" data-retry="${p.id}">${icon('refresh', 14)} Tentar novamente</button>` : ''}</div>`
-      : a.needsReauth ? `<div class="st">${pill('Precisa reconectar', 'err')}<button class="btn ghost sm" data-reauth="${p.id}">${icon('refresh', 14)} Reconectar</button></div>`
       : p.connected ? `${toggle(`data-net="${p.id}"`, !!pd().selected[p.id])}${pill('Conectado', 'ok')}` : `<button class="btn ghost sm" data-conn="${p.id}">Conectar</button>`;
     return `<div class="net-row">${netLogo(p.id, 36)}<div class="grow"><b>${p.name}</b><small class="${p.connected ? 'muted' : 'muted'}">${p.connected ? esc(a.handle) : 'Não conectado'}</small></div>${right}</div>`;
   }).join('');
@@ -122,6 +123,7 @@ function bind(root) {
   on(root, 'click', '[data-conn]', (e, t) => connectWizard(t.dataset.conn, () => { pd().selected[t.dataset.conn] = true; paintCount(root); repaint(root); }));
   on(root, 'click', '[data-retry]', (e, t) => {
     const id = t.dataset.retry, ex = root._pctx.exp(); if (!ex) return;
+    if (!publishable(providers.get(id))) return repaint(root); // rede precisa reconectar: não tenta publicar
     setStatus(root, ex, id, 'queued');
     providers.get(id).publish({ exportId: ex.id, caption: pd().caption }, (st, m) => setStatus(root, ex, id, st, m)).catch((err) => setStatus(root, ex, id, 'failed', err?.message || GENERIC_PUB_ERR));
   });

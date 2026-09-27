@@ -36,6 +36,16 @@ window.__run=async()=>{const L=[];const ok=(n,c)=>L.push((c?'PASS ':'FAIL ')+n);
  ok('painel Publicar mostra "Precisa reconectar" pro Facebook',/Precisa reconectar/.test(row('Facebook').textContent));
  ok('painel Publicar oferece botão Reconectar',!!row('Facebook').querySelector('[data-reauth=fb]'));
  ok('rede em reconexão não tem opção de marcar para publicar',!row('Facebook').querySelector('[data-net=fb]'));
+ // combinação perigosa: status "Falhou" antigo + needsReauth chegando depois (sem repintar ainda)
+ store.state.accounts.li={connected:true,handle:'Home Creators',needsReauth:false};store.save();
+ store.state.pubDraft.statuses.li={status:'failed',msg:'Falha anterior'};store.save();
+ $('[data-route=home]').click();await sleep(100);$('[data-route=publications]').click();await sleep(300);
+ ok('LinkedIn com falha anterior mostra "Tentar novamente"',row('LinkedIn').textContent.includes('Falhou')&&!!row('LinkedIn').querySelector('[data-retry=li]'));
+ store.state.accounts.li.needsReauth=true;store.save(); // DOM ainda mostra o botão antigo (tela não foi repintada)
+ const statusBefore=JSON.stringify(store.state.pubDraft.statuses.li);
+ row('LinkedIn').querySelector('[data-retry=li]').click();await sleep(200);
+ ok('retry não publica quando a rede passou a precisar de reconexão',JSON.stringify(store.state.pubDraft.statuses.li)===statusBefore);
+ ok('needsReauth tem prioridade sobre status "Falhou" antigo ao repintar',/Precisa reconectar/.test(row('LinkedIn').textContent)&&!row('LinkedIn').querySelector('[data-retry=li]'));
  for(const r of ['home','accounts','analytics','strategies','settings']){$('[data-route='+r+']').click();await sleep(1200);ok('route '+r,$('.view').children.length>0)
   if(r==='accounts'){
    const card=$$('.acct').find(c=>c.textContent.includes('Facebook'));
