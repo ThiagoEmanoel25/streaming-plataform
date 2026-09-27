@@ -144,6 +144,25 @@ Um subagente só, um commit só.
   configurado tenta o Supabase; sem, usa dev-login) e **deixar explícito no README que o caminho
   Supabase não foi verificado contra um projeto real**.
 
+## Task 7 — Pesquisa de mercado de verdade
+
+O escopo pede, com todas as letras: "Quero que você estude o mercado (CapCut, Opus, Repurpose, Buffer,
+Late, tools de sports clipping) e traga 5–8 ideias com: esforço estimado + valor pro usuário."
+A lista que existe hoje em `docs/estrategia-viabilidade.md` saiu de conhecimento geral, sem consultar
+nenhuma fonte — isso não cumpre o requisito.
+
+- Pesquisar na web o que essas ferramentas **de fato vendem hoje**: o que está no plano pago, o que é
+  gratuito, preço, e qual recurso cada uma usa como argumento principal. Cobrir pelo menos
+  CapCut, Opus Clip, Repurpose.io, Buffer, Late, e duas ferramentas de clipping esportivo.
+- Atualizar a seção de diferenciais de `docs/estrategia-viabilidade.md`: manter de 5 a 8 ideias,
+  cada uma com esforço (P/M/G) e valor, **agora com a fonte que sustenta a ideia** (link e data).
+- Corrigir o que a pesquisa contradisser. Se uma ideia da lista atual se mostrar comum no mercado
+  (não é diferencial) ou inviável, dizer isso em vez de manter.
+- Marcar claramente o que é preço/recurso observado na fonte e o que é estimativa minha.
+- Nada de inventar número: sem fonte, a afirmação não entra.
+
+Sem código. O entregável é a seção reescrita, com as fontes.
+
 ## Verificação final
 
 ```sh
