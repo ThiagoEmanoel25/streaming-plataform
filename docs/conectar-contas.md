@@ -14,16 +14,21 @@ Instagram e Facebook pedem conta profissional ligada a uma Página. Sem isso a r
 Contas sociais → Reels (editar) → Exportar → Publicações (legenda + redes) → status por rede (fila, processando, publicado, falhou).
 "Um clique" no editor exporta e publica em Instagram + YouTube com a legenda-modelo do tipo de lance.
 
-## O que falta para escalar (hoje tudo é simulado)
+## O que já existe (`backend/`, ligado ao app)
+OAuth por rede com state assinado, tokens cifrados (AES-GCM), publicação idempotente por `<export>:<rede>`,
+falha isolada com retry, limites de plano no servidor e webhooks verificados (RunPod e Stripe).
+Roda sem credenciais: `docker compose up --build` sobe o app e a API juntos em http://localhost:8080.
+
+## O que falta para escalar
 | Item | Por quê |
 |---|---|
 | Aprovação dos apps nas redes (Meta, Google, TikTok, X, LinkedIn) | Sem ela a publicação é limitada ou fica privada. Prazo é da rede, começar cedo |
-| Providers reais (ou agregador) atrás de `SocialProvider` | Hoje `Mock*Provider`. A interface já é a mesma |
-| Login real (Supabase) e sessão validada no Worker | Hoje `MockAuthProvider` |
-| Export real no RunPod (ffmpeg) com fila e retentativa | Workers não rodam ffmpeg |
+| `SOCIAL_MODE=live` verificado | Instagram e YouTube estão escritos, mas sem app aprovado não deu para rodar |
+| Login real (Supabase) no app | O Worker já valida o JWT; falta o app emitir um de verdade |
+| Imagem do RunPod (ffmpeg) que lê a receita e devolve o mp4 | O Worker já enfileira e recebe o webhook |
 | Tokens das redes criptografados, com renovação e aviso de "reconectar" | Segurança e continuidade |
-| Stripe (checkout + webhook) e limites aplicados no servidor | Hoje o limite é só na interface |
-| Idempotência na publicação | Evitar post duplicado em retentativa |
+| Chaves do Stripe e preços | Checkout e webhook já implementados |
+| Agendamento disparar de fato (Cron Trigger) | Hoje grava a data, mas ninguém publica na hora |
 | Storage (R2/B2), retenção de exports antigos e custo por export | Custo de GPU e armazenamento |
 | Música por link: não usar download de YouTube/Instagram | Copyright e termos das plataformas. Usar upload próprio ou biblioteca licenciada |
 | Staging separado de produção | Testar aprovações e pagamentos sem risco |

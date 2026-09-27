@@ -1,0 +1,8 @@
+node_modules/
+e2e/out/
+backend/.dev.vars
+*.db
+.DS_Store
+
+# workspace do subagent-driven-development (scratch)
+.superpowers/

@@ -1,0 +1,85 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="/css/styles.css"></head><body>
+<div class="app"><aside class="side" id="side"></aside><main class="main" id="view"></main></div><div id="modal-root"></div><div id="toast-root"></div>
+<script>window.__e=[];addEventListener('error',e=>__e.push(e.message+' @'+e.lineno));addEventListener('unhandledrejection',e=>__e.push('rej '+(e.reason&&e.reason.message)));
+if(!sessionStorage.getItem('e2e'))localStorage.clear();sessionStorage.setItem('e2e','1')</script>
+<script type="module">
+import '/js/main.js';
+import { live, call, getToken } from '/js/services/backend.js';
+import { store } from '/js/store.js';
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));const $=s=>document.querySelector(s);const $$=s=>[...document.querySelectorAll(s)];
+window.__run=async()=>{const L=[];const ok=(n,c)=>L.push((c?'PASS ':'FAIL ')+n);
+ const click=s=>{const e=$(s);if(!e)throw new Error('missing '+s);e.click()};
+ // usuário novo a cada execução: o volume do container guarda os dados entre runs
+ const EMAIL='demo+'+Date.now().toString(36)+'@homecreators.app';
+ try{
+ await sleep(400);
+ ok('backend detectado (/api/health)',live());
+ ok('começa na tela de login',!!$('.login'));
+
+ // login de verdade: o token vem assinado do servidor
+ $('#lem').value=EMAIL;$('#lpw').value='123456';click('#lgo');await sleep(1500);
+ ok('login emitiu JWT',(getToken()||'').split('.').length===3);
+ ok('entrou no app',!!$('.proj')||!!$('.empty'));
+ const me=await call('GET','/me');
+ ok('servidor reconhece o usuário',me.user.email===EMAIL&&me.plan.id==='starter');
+ ok('base limpa: 0 projetos',store.state.projects.length===0&&store.state.exports.length===0);
+
+ // editar e exportar -> o projeto e o export nascem no servidor
+ click('[data-route=reels]');await sleep(1200);
+ const zoom=$('[data-k=zoom]');zoom.value=140;zoom.dispatchEvent(new Event('input',{bubbles:true}));zoom.dispatchEvent(new Event('change',{bubbles:true}));
+ click('[data-act=save]');await sleep(300);
+ click('.rl-top [data-act=export]');await sleep(800);
+ ok('painel mostra as fases do export',!!$('.phase'));
+ await sleep(6000);
+ const prj=await call('GET','/projects');
+ ok('projeto salvo no servidor com a receita',prj.projects.length===1&&prj.projects[0].data.zoom===1.4);
+ const exp=await call('GET','/exports');
+ ok('export concluído no servidor ('+exp.exports[0]?.status+')',exp.exports.length===1&&exp.exports[0].status==='ready'&&!!exp.exports[0].url);
+ ok('app mostra o export pronto',/Reel exportado/.test($('#rb').textContent));
+ ok('uso veio do servidor: 1 de 10 exports',/1 de 10/.test($('#side').textContent));
+
+ // conectar conta de verdade (authorize -> callback no backend)
+ click('[data-rtab=pub]');await sleep(200);
+ ok('nenhuma rede conectada ainda',$$('[data-conn]').length===7);
+ click('[data-conn=ig]');await sleep(100);
+ for(let i=0;i<4;i++){click('[data-a=next]');await sleep(60)}
+ await sleep(2500);
+ ok('assistente concluiu',/conectado com sucesso/.test($('.modal')?.textContent||''));
+ click('[data-a=done]');await sleep(400);
+ const acc=await call('GET','/social/accounts');
+ ok('servidor gravou a conexão',acc.accounts.find(a=>a.id==='instagram').connected===true);
+ ok('app mostra @homecreators',/@homecreators/.test($('.p-nets').textContent));
+
+ // publicar de verdade
+ $('.p-cap').value='Que golaço! Teste no container.';$('.p-cap').dispatchEvent(new Event('input',{bubbles:true}));
+ click('[data-now]');await sleep(250);
+ const early=$('.p-nets').textContent.replace(/\s+/g,' ').slice(0,60);
+ ok('entrou na fila ['+early+']',/Na fila|Processando/.test(early));
+ await sleep(7000);
+ const pub=await call('GET','/publications');
+ ok('servidor publicou ('+pub.publications[0]?.status+')',pub.publications.length===1&&pub.publications[0].status==='success');
+ ok('id idempotente <export>:<rede>',pub.publications[0].id===exp.exports[0].id+':instagram');
+ ok('app mostra Publicado',/Publicado/.test($('.p-nets').textContent));
+ ok('uso de publicações veio do servidor',(await call('GET','/me')).usage.publications===1);
+
+ // republicar não duplica
+ const again=await call('POST','/publications',{exportId:exp.exports[0].id,caption:'x',networks:['instagram']});
+ ok('republicar é ignorado',again.skipped.includes('instagram')&&(await call('GET','/me')).usage.publications===1);
+
+ // recarregar: os dados voltam do servidor, não do navegador
+ // apaga o cache local do app, mas mantém a sessão: o que voltar veio do servidor
+ const keep={session:store.state.session,user:store.state.user};
+ localStorage.setItem('homecreators.v1',JSON.stringify(keep));
+ ok('cache local do app apagado',JSON.parse(localStorage.getItem('homecreators.v1')).projects===undefined);
+ }catch(e){L.push('EXC '+e.message+' '+(e.stack||'').split('\n')[1])}
+ L.push('ERRS '+JSON.stringify(__e));return L.join('\n')};
+window.__after=async()=>{
+ const L=[];const ok=(n,c)=>L.push((c?'PASS ':'FAIL ')+n);
+ await sleep(1500);
+ const diag=`sessao=${!!store.state.session} token=${!!localStorage.getItem('hc.token')} prj=${store.state.projects.length} exp=${store.state.exports.length}`;
+ ok('reabriu já logado ['+diag+']',!document.body.classList.contains('out'));
+ ok('projeto veio do servidor',store.state.projects.length===1);
+ ok('export veio do servidor',store.state.exports.length===1);
+ ok('publicação veio do servidor',store.state.publications.length===1&&store.state.publications[0].status==='success');
+ return L.join('\n')};
+</script></body></html>

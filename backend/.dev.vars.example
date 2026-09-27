@@ -1,0 +1,14 @@
+# copie para .dev.vars (não versionar)
+SUPABASE_JWT_SECRET=o-jwt-secret-do-projeto-supabase
+TOKEN_KEY=                      # openssl rand -base64 32
+RENDER_WEBHOOK_SECRET=          # openssl rand -hex 24
+RUNPOD_API_KEY=
+RUNPOD_ENDPOINT=
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+STRIPE_PRICE_CREATOR=
+STRIPE_PRICE_PRO=
+IG_CLIENT_ID=
+IG_CLIENT_SECRET=
+YT_CLIENT_ID=
+YT_CLIENT_SECRET=

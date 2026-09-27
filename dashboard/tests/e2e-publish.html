@@ -4,6 +4,7 @@
 localStorage.setItem('homecreators.v1',JSON.stringify({session:{email:'a@b.com'}}))</script>
 <script type="module">
 import '/js/main.js';
+import { NET_STRATEGY } from '/js/services/api.js';
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));const $=s=>document.querySelector(s);const $$=s=>[...document.querySelectorAll(s)];
 window.__run=async()=>{const L=[];const ok=(n,c)=>L.push((c?'PASS ':'FAIL ')+n);
  const row=n=>$$('.net-row').find(r=>r.querySelector('b').textContent===n);
@@ -25,7 +26,7 @@ window.__run=async()=>{const L=[];const ok=(n,c)=>L.push((c?'PASS ':'FAIL ')+n);
  ok('retry success',row('TikTok').textContent.includes('Publicado'));
  ok('all 3 published once (usage +3)',JSON.parse(localStorage.getItem('homecreators.v1')).usage.publications===21);
  $('[data-reset]').click();await sleep(50);
- $('[data-sched]').click();await sleep(50);ok('schedule modal with suggestion',/19:30/.test($('.modal').textContent));
+ $('[data-sched]').click();await sleep(50);ok('schedule modal suggests the best time ('+NET_STRATEGY.ig+')',$('.modal').textContent.includes(NET_STRATEGY.ig));
  $('[data-ok]').click();await sleep(1200);
  ok('scheduled statuses',$$('.net-row').filter(r=>r.textContent.includes('Agendado')).length===3);
  for(const r of ['home','accounts','analytics','strategies','settings']){$('[data-route='+r+']').click();await sleep(1200);ok('route '+r,$('.view').children.length>0)}

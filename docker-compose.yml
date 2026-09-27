@@ -1,0 +1,28 @@
+# Sobe o app inteiro: dashboard + API, com dados mockados e sem credencial nenhuma.
+#   docker compose up --build   ->   http://localhost:8080
+services:
+  api:
+    build: ./backend
+    environment:
+      DEV_LOGIN: "1"                     # login por e-mail sem Supabase; NUNCA em produção
+      PUBLIC_URL: http://localhost:8080  # o app e a API ficam na mesma origem (nginx)
+      APP_URL: http://localhost:8080
+      SOCIAL_MODE: mock                  # live = APIs reais das redes (exige apps aprovados)
+      RENDER_MODE: mock                  # live = RunPod
+      MOCK_RENDER_STEP_MS: "400"
+      MOCK_PUBLISH_MS: "1200"
+      SUPABASE_JWT_SECRET: dev-secret-trocar-em-producao
+      STRIPE_WEBHOOK_SECRET: whsec_dev   # só para a verificação de assinatura ficar ativa no demo
+    volumes:
+      - api-data:/data
+    expose: ["8787"]
+    ports: ["8787:8787"]                 # só para inspecionar a API direto
+
+  web:
+    build: ./dashboard
+    ports: ["8080:80"]
+    depends_on:
+      api: { condition: service_healthy }
+
+volumes:
+  api-data:

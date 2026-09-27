@@ -1,0 +1,14 @@
+{
+  "name": "homecreators-api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test \"test/*.test.mjs\"",
+    "dev": "DEV_LOGIN=1 node dev/server.mjs",
+    "dev:wrangler": "wrangler dev",
+    "deploy:staging": "wrangler deploy --env staging",
+    "deploy": "wrangler deploy --env production",
+    "db:local": "wrangler d1 execute homecreators --local --file=schema.sql",
+    "db:staging": "wrangler d1 execute homecreators-staging --remote --file=schema.sql"
+  }
+}

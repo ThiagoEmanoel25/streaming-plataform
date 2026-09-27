@@ -1,41 +1,91 @@
 import { store } from '../store.js';
-import { api, TEMPLATES, NET_STRATEGY } from '../services/api.js';
+import { api, TEMPLATES, TPL_ICON, BEST_TIMES, COVERS, HOOKS } from '../services/api.js';
 import { providers } from '../services/social.js';
-import { $, on, esc, icon, netLogo, thumb, pill, toast } from '../ui/components.js';
+import { go } from '../router.js';
+import { $, on, esc, icon, netLogo, thumb, cardHead, pageHead, copyText, toast } from '../ui/components.js';
 import { brandForm } from '../ui/brand.js';
 
+const LANGS = [['pt', 'Português', '🇧🇷'], ['en', 'Inglês', '🇺🇸'], ['es', 'Espanhol', '🇪🇸']];
+const first = (c) => TEMPLATES[c][0];
+
 export function render(el) {
+  el.classList.add('wide');
   const pd = store.state.pubDraft;
-  let cat = Object.keys(TEMPLATES)[0], lang = 'pt', tr = '', variants = null, covers = null, busy = {};
+  let cat = 'Todos', tr = { en: null, es: null }, busy = {}, allNets = false, ptBase = null;
 
-  const timeCard = () => `<section class="card"><div class="row between"><h3>Melhor horário para publicar</h3>${pill('Recomendação', 'p')}</div>
-    <div class="list tight">${providers.list().map((p) => `<div class="item">${netLogo(p.id, 30)}<b class="grow">${p.name}</b><span class="time">${NET_STRATEGY[p.id]}</span></div>`).join('')}</div>
-    <small class="muted">Sugestão baseada em dados de exemplo. Não garante alcance.</small></section>`;
-  const tplCard = () => `<section class="card"><h3>Templates de legenda</h3><div class="chips">${Object.keys(TEMPLATES).map((c) => `<button class="chip ${c === cat ? 'on' : ''}" data-cat="${c}">${c}</button>`).join('')}</div>
-    <div class="list tight">${TEMPLATES[cat].map((t) => `<div class="item"><span class="grow">${esc(t)}</span><button class="btn ${pd.caption === t ? 'ghost' : ''} sm" data-use="${esc(t)}">${pd.caption === t ? 'Em uso' : 'Usar legenda'}</button></div>`).join('')}</div></section>`;
-  const coverCard = () => `<section class="card"><h3>Capas</h3>${covers ? `<div class="grid-3 tight">${covers.map((c) => `<div class="cover">${thumb(c.seed, 'tall')}<button class="btn ${pd.cover === c.id ? 'ghost' : ''} sm block" data-cover="${c.id}">${pd.cover === c.id ? 'Selecionada' : 'Usar esta capa'}</button></div>`).join('')}</div>`
-    : `<p class="muted">Gere 3 variações de capa para o seu vídeo.</p><button class="btn ghost sm" data-gen="cover" ${busy.cover ? 'disabled' : ''}>${busy.cover ? '<i class="spin"></i> Gerando…' : 'Gerar variações de capa'}</button>`}</section>`;
-  const introCard = () => `<section class="card"><h3>Primeiros segundos</h3>${variants ? `<div class="list tight">${variants.map((v) => `<div class="item">${thumb(v.seed, 'mini')}<b class="grow">${v.label}</b><button class="btn ${pd.intro === v.id ? 'ghost' : ''} sm" data-intro="${v.id}">${pd.intro === v.id ? 'Selecionada' : 'Usar'}</button></div>`).join('')}</div>`
-    : `<p class="muted">Crie alternativas para prender a atenção nos primeiros 3 segundos.</p><button class="btn ghost sm" data-gen="intro" ${busy.intro ? 'disabled' : ''}>${busy.intro ? '<i class="spin"></i> Criando…' : 'Criar variação dos primeiros 3 segundos'}</button>`}</section>`;
-  const langCard = () => `<section class="card"><h3>Multi-idioma</h3><textarea id="src" rows="3" placeholder="Legenda em português">${esc(pd.caption || TEMPLATES.Gol[0])}</textarea>
-    <div class="seg">${[['pt', 'Português'], ['en', 'Inglês'], ['es', 'Espanhol']].map(([k, l]) => `<button class="${lang === k ? 'on' : ''}" data-lang="${k}">${l}</button>`).join('')}</div>
-    <button class="btn ghost sm" data-tr ${busy.tr ? 'disabled' : ''}>${busy.tr ? '<i class="spin"></i> Traduzindo…' : 'Traduzir legenda'}</button>
-    ${tr ? `<div class="result"><p>${esc(tr)}</p><button class="btn sm" data-usetr>Usar legenda</button></div>` : ''}</section>`;
+  // o multi-idioma traduz sempre a partir do português: usar a versão em inglês
+  // como legenda não pode virar a base da tradução seguinte
+  const base = () => ptBase || (pd.caption || '').trim() || first('Gol');
+  const rows = () => (cat === 'Todos' ? Object.keys(TEMPLATES).map((c) => [c, first(c)]) : TEMPLATES[cat].map((t) => [cat, t]));
 
-  const paint = () => {
-    el.innerHTML = `<header class="page-head"><div><h1>Estratégias</h1><p class="muted">Recursos para publicar melhor. Tudo simulado nesta versão.</p></div></header>
-      <div class="grid-2 top">${timeCard()}${tplCard()}${coverCard()}${introCard()}${langCard()}<section class="card" id="bf"><h3>Marca</h3><div id="bfb"></div></section></div>`;
+  const timeCard = () => `<section class="card">${cardHead('clock', 'Melhor horário para publicar', 'Com base no desempenho do seu conteúdo')}
+    <div class="nets">${(allNets ? providers.list() : providers.list().slice(0, 3)).map((p) => { const b = BEST_TIMES[p.id], sel = pd.times?.[p.id] || b.best;
+      return `<div class="netblk"><div class="row gap">${netLogo(p.id, 34)}<b class="grow">${p.name}</b>
+        <div class="times">${b.times.map((t) => `<button class="tchip ${t === sel ? 'on' : ''}" data-time="${p.id}|${t}">${t}</button>`).join('')}</div></div>
+        <small class="muted">${esc(b.hint)}</small></div>`; }).join('')}</div>
+    <button class="link more" data-more>${allNets ? 'Ver menos' : `Ver as outras ${providers.list().length - 3} redes`}</button>
+    <small class="muted foot">Recomendação a partir de dados de exemplo. Não garante alcance.</small></section>`;
+
+  const tplCard = () => `<section class="card">${cardHead('doc', 'Templates de legenda', 'Legendas prontas para aumentar o engajamento')}
+    <div class="chips">${['Todos', ...Object.keys(TEMPLATES)].map((c) => `<button class="chip ${c === cat ? 'on' : ''}" data-cat="${esc(c)}">${c}</button>`).join('')}</div>
+    <div class="tpls">${rows().map(([c, t]) => `<div class="tpl"><span class="ch-i sm">${icon(TPL_ICON[c], 16)}</span>
+      <div class="grow"><b>${c}</b><p>${esc(t).replace(/\n/g, '<br>')}</p></div>
+      <button class="icon-btn" data-copy="${esc(t)}" aria-label="Copiar legenda">${icon('copy', 16)}</button>
+      <button class="btn ${pd.caption === t ? 'ghost' : ''} sm" data-use="${esc(t)}">${pd.caption === t ? 'Em uso' : 'Usar legenda'}</button></div>`).join('')}</div></section>`;
+
+  const coverCard = () => `<section class="card">${cardHead('image', 'Capas', 'Modelos de capa para atrair mais cliques')}
+    <div class="vgrid">${COVERS.map((c) => `<div><div class="vcard">${thumb(c.seed, 'fill')}<span class="vtext">${esc(c.text)}</span><span class="vlogo">${esc(store.state.brand.name)}</span></div>
+      <button class="btn ${pd.cover === c.id ? '' : 'ghost'} sm block" data-cover="${c.id}">${pd.cover === c.id ? 'Capa atual' : 'Usar esta capa'}</button></div>`).join('')}</div></section>`;
+
+  const hookCard = () => `<section class="card">${cardHead('bolt', 'Primeiros 3 segundos', 'Ganchos prontos para prender a atenção')}
+    <div class="vgrid">${HOOKS.map((h) => `<div><div class="vcard">${thumb(h.seed, 'fill')}<span class="vtext sm">${esc(h.text)}</span><span class="vdur">${icon('play', 10)} 00:03</span></div>
+      <button class="btn ${pd.intro === h.id ? '' : 'ghost'} sm block" data-intro="${h.id}">${pd.intro === h.id ? 'Gancho atual' : 'Usar este gancho'}</button></div>`).join('')}</div></section>`;
+
+  const langCard = () => `<section class="card">${cardHead('globe', 'Multi-idioma', 'Traduza suas legendas e alcance mais pessoas')}
+    <div class="langs">${LANGS.map(([k, name, flag]) => {
+      const text = k === 'pt' ? base() : tr[k];
+      return `<div class="lang"><div class="row gap"><span class="flag">${flag}</span><b>${name}</b>
+        ${k === 'pt' ? '<span class="tag">Original</span>' : `<button class="tag blue" data-tr="${k}" ${busy[k] ? 'disabled' : ''}>${busy[k] ? '<i class="spin"></i> Traduzindo' : 'Traduzir'}</button>`}
+        <span class="sp"></span>${text ? `<button class="icon-btn" data-copy="${esc(text)}" aria-label="Copiar">${icon('copy', 15)}</button>` : ''}</div>
+        <p>${text ? esc(text).replace(/\n/g, '<br>') : '<span class="muted">Toque em Traduzir para gerar esta versão.</span>'}</p>
+        ${text && k !== 'pt' ? `<button class="btn ${pd.caption === text ? 'ghost' : ''} sm" data-use="${esc(text)}">${pd.caption === text ? 'Em uso' : 'Usar legenda'}</button>` : ''}</div>`;
+    }).join('')}</div></section>`;
+
+  const brandCard = () => `<section class="card">${cardHead('shield', 'Sua marca', 'Adicione seu logo nos vídeos automaticamente')}<div id="bfb"></div></section>`;
+
+  function paint() {
+    el.innerHTML = `${pageHead({
+      crumb: 'Estratégias', title: 'Estratégias', savedAt: store.state.savedAt,
+      sub: 'Recursos recomendados e ações práticas para fazer seu conteúdo crescer.',
+      actions: `<button class="btn ghost" data-save>${icon('save', 17)} Salvar projeto</button><button class="btn" data-export>${icon('download', 17)} Exportar</button>`,
+    })}
+      <div class="scols"><div class="scol">${timeCard()}${hookCard()}</div><div class="scol">${tplCard()}${langCard()}</div><div class="scol">${coverCard()}${brandCard()}</div></div>`;
     brandForm($('#bfb', el));
-  };
+  }
   paint();
 
-  // brandForm registra seus próprios eventos; aqui só o restante (delegado no el, sem recriar a cada paint)
+  on(el, 'click', '[data-more]', () => { allNets = !allNets; paint(); });
   on(el, 'click', '[data-cat]', (e, t) => { cat = t.dataset.cat; paint(); });
-  on(el, 'click', '[data-use]', (e, t) => { pd.caption = t.dataset.use; toast('Legenda pronta em Publicações'); paint(); });
+  on(el, 'click', '[data-copy]', (e, t) => copyText(t.dataset.copy));
+  on(el, 'click', '[data-use]', (e, t) => {
+    pd.caption = t.dataset.use;
+    if (t.closest('.tpls')) { ptBase = t.dataset.use; tr = { en: null, es: null }; } // novo original -> traduções velhas não valem mais
+    toast('Legenda pronta em Publicações'); paint();
+  });
   on(el, 'click', '[data-cover]', (e, t) => { pd.cover = +t.dataset.cover; toast('Capa selecionada'); paint(); });
-  on(el, 'click', '[data-intro]', (e, t) => { pd.intro = +t.dataset.intro; toast('Variação selecionada'); paint(); });
-  on(el, 'click', '[data-gen]', async (e, t) => { const k = t.dataset.gen; busy[k] = true; paint(); const r = await api.variants(k); busy[k] = false; if (k === 'cover') covers = r; else variants = r; paint(); });
-  on(el, 'click', '[data-lang]', (e, t) => { lang = t.dataset.lang; tr = ''; paint(); });
-  on(el, 'click', '[data-tr]', async () => { const src = $('#src', el).value.trim(); if (!src) return toast('Escreva uma legenda para traduzir.', 'err'); busy.tr = true; paint(); tr = await api.translate(src, lang); busy.tr = false; paint(); });
-  on(el, 'click', '[data-usetr]', () => { pd.caption = tr; toast('Legenda pronta em Publicações'); paint(); });
+  on(el, 'click', '[data-intro]', (e, t) => { pd.intro = +t.dataset.intro; toast('Gancho selecionado'); paint(); });
+  on(el, 'click', '[data-time]', (e, t) => {
+    const [net, time] = t.dataset.time.split('|');
+    (pd.times ||= {})[net] = time;
+    paint();
+  });
+  on(el, 'click', '[data-tr]', async (e, t) => {
+    const k = t.dataset.tr;
+    busy[k] = true; paint();
+    try { tr[k] = await api.translate(base(), k); } catch { toast('Não foi possível traduzir agora.', 'err'); }
+    busy[k] = false; paint();
+  });
+  on(el, 'click', '[data-save]', () => { store.save(); toast('Escolhas salvas'); paint(); });
+  on(el, 'click', '[data-export]', () => go('reels'));
+  on(el, 'click', '[data-back]', () => go('home'));
 }

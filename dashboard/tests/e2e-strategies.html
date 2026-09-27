@@ -1,0 +1,74 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../css/styles.css"></head><body>
+<div class="app"><aside class="side" id="side"></aside><main class="main" id="view"></main></div><div id="modal-root"></div><div id="toast-root"></div><pre id="result">RUN</pre>
+<script>window.__e=[];addEventListener('error',e=>__e.push(e.message+' @'+e.lineno));addEventListener('unhandledrejection',e=>__e.push('rej '+(e.reason&&e.reason.message)));
+localStorage.setItem('homecreators.v1',JSON.stringify({session:{email:'a@b.com'}}))</script>
+<script type="module">
+import '/js/main.js';
+import { TEMPLATES, BEST_TIMES, COVERS } from '/js/services/api.js';
+import { store } from '/js/store.js';
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));const $=s=>document.querySelector(s);const $$=s=>[...document.querySelectorAll(s)];
+const L=[];const ok=(n,c)=>L.push((c?'PASS ':'FAIL ')+n);
+const click=s=>{const e=$(s);if(!e)throw new Error('missing '+s);e.click()};
+try{
+ await sleep(300);click('[data-route=strategies]');await sleep(200);
+ ok('6 cards no padrão da referência',$$('.scols .card').length===6&&$$('.ch').length===6);
+ ok('cabeçalho com voltar, salvo e ações',!!$('[data-back]')&&!!$('.saved')&&!!$('[data-save]')&&!!$('[data-export]'));
+
+ // melhor horário
+ ok('mostra 3 redes por padrão',$$('.netblk').length===3);
+ ok('horário sugerido marcado',$('.netblk .tchip.on').textContent===BEST_TIMES.ig.best);
+ click('[data-time="ig|19:00"]');await sleep(30);
+ ok('escolher outro horário',$('.netblk .tchip.on').textContent==='19:00'&&store.state.pubDraft.times.ig==='19:00');
+ click('[data-more]');await sleep(30);
+ ok('ver as outras redes -> 7',$$('.netblk').length===7);
+ click('[data-more]');await sleep(30);
+ ok('ver menos -> 3',$$('.netblk').length===3);
+
+ // templates
+ ok('Todos mostra 1 por categoria',$$('.tpl').length===Object.keys(TEMPLATES).length);
+ click('[data-cat="Gol"]');await sleep(30);
+ ok('filtro Gol mostra as 2 variações',$$('.tpl').length===TEMPLATES.Gol.length);
+ const tpl=TEMPLATES.Gol[0];
+ $(`[data-use]`).click();await sleep(50);
+ ok('usar legenda grava no rascunho',store.state.pubDraft.caption===tpl);
+ ok('marca como "Em uso"',$('[data-use]').textContent.trim()==='Em uso');
+ click('[data-copy]');await sleep(50);
+ ok('copiar não quebra a tela (clipboard bloqueado)',$$('.tpl').length>0);
+
+ // capas e ganchos
+ click(`[data-cover="1"]`);await sleep(50);
+ ok('capa selecionada',store.state.pubDraft.cover===1&&$('[data-cover="1"]').textContent.trim()==='Capa atual');
+ ok('capa mostra o texto do modelo',$('[data-cover="0"]').closest('.card').querySelector('.vtext').textContent===COVERS[0].text);
+ click('[data-intro="2"]');await sleep(50);
+ ok('gancho selecionado',store.state.pubDraft.intro===2&&$('[data-intro="2"]').textContent.trim()==='Gancho atual');
+ ok('gancho mostra 00:03',/00:03/.test($('.vdur').textContent));
+
+ // multi-idioma
+ ok('português marcado como original',/ORIGINAL|Original/i.test($('.lang .tag').textContent));
+ click('[data-tr=en]');await sleep(1200);
+ const en=$$('.lang')[1].querySelector('p').textContent;
+ ok('traduz para inglês ('+en.slice(0,18)+'…)',/WHAT A GOAL/.test(en));
+ $$('.lang')[1].querySelector('[data-use]').click();await sleep(50);
+ ok('usar legenda traduzida',/WHAT A GOAL/.test(store.state.pubDraft.caption));
+ click('[data-tr=es]');await sleep(1200);
+ ok('espanhol sai do português, não do inglês',/GOLAZO/i.test($$('.lang')[2].querySelector('p').textContent));
+
+ // marca
+ const op=$('[data-bk=opacity]');op.value=40;op.dispatchEvent(new Event('input',{bubbles:true}));
+ ok('opacidade no preview',Math.abs(parseFloat($('.bf-mark').style.opacity)-0.4)<0.01&&$('[data-bbox=opacity]').value==='40%');
+ const bx=$('[data-bbox=x]');bx.value='-30';bx.dispatchEvent(new Event('change',{bubbles:true}));
+ ok('caixa de valor move a marca',$('.bf-mark').style.left==='20%'&&store.state.brand.x===-30);
+ bx.value='999';bx.dispatchEvent(new Event('change',{bubbles:true}));
+ ok('valor fora da faixa é limitado',store.state.brand.x===50);
+ bx.value='abc';bx.dispatchEvent(new Event('change',{bubbles:true}));
+ ok('valor inválido é ignorado',store.state.brand.x===50);
+ ok('marca persiste no storage',JSON.parse(localStorage.getItem('homecreators.v1')).brand.x===50);
+
+ // a marca escolhida vira overlay no editor
+ click('[data-route=reels]');await sleep(900);
+ const ov=$('.ovl .ov');
+ ok('editor usa a marca como overlay',!!ov&&ov.style.left==='100%'&&Math.abs(parseFloat(ov.style.opacity)-0.4)<0.01);
+ ok('legenda escolhida chega ao painel Publicar',/WHAT A GOAL/.test($('.p-cap').value));
+}catch(e){L.push('EXC '+e.message+' '+(e.stack||'').split('\n')[1])}
+L.push('ERRS '+JSON.stringify(__e));$('#result').textContent=L.join('\n')+'\nDONE';
+</script></body></html>

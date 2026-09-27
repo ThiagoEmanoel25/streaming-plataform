@@ -1,0 +1,37 @@
+name = "homecreators-api"
+main = "src/index.js"
+compatibility_date = "2026-01-15"
+
+# Valores não-secretos. Os segredos vão por `wrangler secret put` (ver README).
+[vars]
+PUBLIC_URL = "http://localhost:8787"
+APP_URL = "http://localhost:8000"
+SOCIAL_MODE = "mock"          # mock | live
+RENDER_MODE = "mock"          # mock | live
+EXPORT_BUCKET = "homecreators-exports"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "homecreators"
+database_id = "TROCAR-pelo-id-do-wrangler-d1-create"
+
+# Exports servidos pelo R2; a fonte da partida (arquivo grande) fica no B2.
+[[r2_buckets]]
+binding = "EXPORTS"
+bucket_name = "homecreators-exports"
+
+[env.staging]
+name = "homecreators-api-staging"
+[env.staging.vars]
+PUBLIC_URL = "https://api-staging.homecreators.app"
+APP_URL = "https://staging.homecreators.app"
+SOCIAL_MODE = "mock"
+RENDER_MODE = "mock"
+
+[env.production]
+name = "homecreators-api"
+[env.production.vars]
+PUBLIC_URL = "https://api.homecreators.app"
+APP_URL = "https://app.homecreators.app"
+SOCIAL_MODE = "live"
+RENDER_MODE = "live"

@@ -1,4 +1,4 @@
-import { store, normProject, posXY } from '../store.js';
+import { store, normProject, refreshUsage } from '../store.js';
 import { api, TEMPLATES, PLANS } from '../services/api.js';
 import { refreshNav } from '../router.js';
 import { $, $$, on, esc, icon, thumb, phoneHTML, applyPhone, fmtClock as clock, fillRange, logoMark, progress, skeleton, empty, toast, confirmDialog } from '../ui/components.js';
@@ -40,7 +40,7 @@ export async function render(el, params) {
 
   const st = store.state, pd = st.pubDraft;
   const proj = params.projectId && st.projects.find((p) => p.id === params.projectId);
-  const brandOv = () => { const b = st.brand; return { id: uid('o'), kind: 'logo', ...posXY(b.pos), size: b.size, opacity: b.opacity / 100 }; };
+  const brandOv = () => { const b = st.brand; return { id: uid('o'), kind: 'logo', x: b.x, y: b.y, size: b.size, opacity: b.opacity / 100 }; };
   let d = proj
     ? normProject(structuredClone(proj))
     : { v: 2, id: uid('p'), name: slug(segs[0].title), segId: segs[0].id, ratio: st.prefs.defaultRatio, zoom: 1, x: 0, y: 0, bright: 0, contrast: 0, sat: 0, temp: 0, trackId: null, overlays: [brandOv()], keyframes: [] };
@@ -184,7 +184,7 @@ export async function render(el, params) {
     try {
       const rec = await api.exportReel({ ...d, seed: seg().seed, duration: seg().dur }, (pct, label) => { expState = { pct, label }; if (rtab === 'exp') $('#rb', el).innerHTML = expBody(); });
       rec.thumb = seg().thumb || null;
-      st.exports.unshift(rec); st.usage.exports++; store.save(); refreshNav();
+      st.exports.unshift(rec); st.usage.exports++; store.save(); await refreshUsage(); refreshNav();
       expRec = rec; toast('Reel exportado');
       return rec;
     } catch { toast('Falha ao exportar. Tente novamente.', 'err'); return null; }
