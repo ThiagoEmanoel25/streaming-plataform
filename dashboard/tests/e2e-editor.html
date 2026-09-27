@@ -72,6 +72,18 @@ try{
  click('.ptrans [data-act=play]');await sleep(500);
  ok('playing advances',parseFloat($('.tl-ph').style.left)>0);
  click('.ptrans [data-act=play]');
+ // linha do tempo recolhível
+ ok('linha do tempo visível por padrão',!$('#tl').classList.contains('closed')&&!!$('.tl-grid'));
+ click('[data-act=tl-toggle]');await sleep(30);
+ ok('recolher esconde a grade',$('#tl').classList.contains('closed')&&getComputedStyle($('.tl-grid')).display==='none');
+ ok('player continua acessível acima do preview',!!$('[data-scrub]')&&!!$('.ptrans [data-act=play]'));
+ ok('preferência gravada',JSON.parse(localStorage.getItem('homecreators.v1')).prefs.timeline===false);
+ click('[data-seg=s5]');await sleep(40);
+ ok('segue recolhida ao trocar de segmento',$('#tl').classList.contains('closed'));
+ click('[data-act=tl-toggle]');await sleep(30);
+ ok('mostrar traz a grade de volta',!$('#tl').classList.contains('closed')&&getComputedStyle($('.tl-grid')).display!=='none');
+ click('[data-seg=s3]');await sleep(40); // volta ao segmento que os checks seguintes esperam
+
  // export via header
  click('.rl-top [data-act=export]');await sleep(400);
  ok('export tab + progress',$('.rtabs .on').textContent==='Exportação'&&!!$('.phase'));

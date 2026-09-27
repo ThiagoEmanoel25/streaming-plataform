@@ -134,9 +134,11 @@ export async function render(el, params) {
     for (let s = 0; s <= dur; s += step) { ruler += `<i style="left:${(s / dur) * 100}%"></i><span style="left:${(s / dur) * 100}%">${s}s</span>`; last = s; }
     if (dur - last > step * 0.4) ruler += `<i style="left:100%"></i><span style="left:100%">${dur}s</span>`;
     const cells = sg.frames ? sg.frames.map((f) => `<img src="${f}" alt="">`).join('') : Array.from({ length: 14 }, (_, i) => `<i class="fc" style="--h:${(sg.seed + i * 7) % 360}"></i>`).join('');
+    $('#tl', el).classList.toggle('closed', !st.prefs.timeline);
     $('#tl', el).innerHTML = `<div class="tl-bar"><button class="icon-btn" data-act="undo" title="Desfazer">${icon('undo', 18)}</button><button class="icon-btn" data-act="redo" title="Refazer">${icon('redo', 18)}</button><span class="sep"></span>
       <button class="icon-btn" data-act="kfadd" title="Adicionar keyframe aqui">${icon('plusd', 18)}</button><button class="icon-btn" data-act="kfprev" title="Keyframe anterior">${icon('prev', 18)}</button><button class="icon-btn" data-act="kfnext" title="Próximo keyframe">${icon('next', 18)}</button><button class="icon-btn" data-act="kfdel" title="Remover keyframe mais próximo">${icon('trash', 17)}</button>
-      <span class="sp"></span><small class="muted">Arraste na linha do tempo. ◆ marca um keyframe (zoom e posição).</small></div>
+      <span class="sp"></span><small class="muted tl-hint">Arraste na linha do tempo. ◆ marca um keyframe (zoom e posição).</small>
+      <button class="icon-btn" data-act="tl-toggle" title="${st.prefs.timeline ? 'Ocultar linha do tempo' : 'Mostrar linha do tempo'}" aria-expanded="${!!st.prefs.timeline}">${icon(st.prefs.timeline ? 'chevdown' : 'chevup', 18)}</button></div>
       <div class="tl-grid"><div class="tl-gut"><span>${icon('film', 17)}</span><span class="m">${icon('music', 17)}</span></div>
       <div class="tl-main"><div class="ruler">${ruler}</div><div class="strip"><button class="playbtn" data-act="play" aria-label="Reproduzir">${icon('play', 13)}</button>${cells}</div>
         ${cur ? `<div class="mtrack">${wave(cur.id)}<span>${icon('music', 15)}</span><b>${esc(cur.name)}</b></div>` : `<div class="mtrack empty">Sem música. Escolha uma no painel Música.</div>`}
@@ -265,6 +267,7 @@ export async function render(el, params) {
     else if (a === 'save') save();
     else if (a === 'export') startExport();
     else if (a === 'play') play();
+    else if (a === 'tl-toggle') { st.prefs.timeline = !st.prefs.timeline; store.save(); paintTL(); }
     else if (a === 'vol') { muted = !muted; paintStage(); paintPhone(); }
     else if (a === 'fs') ph.requestFullscreen?.();
     else if (a === 'addvid') $('#vf', el).click();

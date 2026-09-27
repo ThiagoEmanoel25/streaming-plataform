@@ -21,7 +21,7 @@ const seed = () => ({
   session: null,
   plan: 'creator',
   usage: { exports: 12, publications: 18, storage: 6.4 },
-  prefs: { autosave: true, confirmPublish: false, defaultRatio: '9:16' },
+  prefs: { autosave: true, confirmPublish: false, defaultRatio: '9:16', timeline: true },
   brand: { name: 'Home Creators', logoSrc: null, x: 16, y: 24, size: 24, opacity: 80 },
   accounts: {
     ig: { connected: true, handle: '@homecreators' },

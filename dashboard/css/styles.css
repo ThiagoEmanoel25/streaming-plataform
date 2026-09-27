@@ -270,3 +270,6 @@ input.bf-name{flex:1;min-width:0;padding:9px 12px;font-size:13px}
 .bf-mark .logo-mark{font-size:15px;border-radius:16%}
 .plan-card b{font-size:12px;white-space:nowrap}.plan-card .row.between{gap:8px}
 .bf{max-width:520px}
+/* linha do tempo recolhível: some a grade, o player segue na barra acima do preview */
+.tl.closed{padding-bottom:8px}
+.tl.closed .tl-grid,.tl.closed .tl-hint{display:none}
