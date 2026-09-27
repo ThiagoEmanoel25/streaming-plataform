@@ -107,3 +107,10 @@ export async function refreshUsage() {
     save();
   } catch { /* o valor local segue valendo até a próxima sincronia */ }
 }
+
+// Salvar precisa chegar ao servidor: hydrate() substitui a lista local pela de lá,
+// então um projeto só no navegador desapareceria ao recarregar.
+export async function pushProject(rec) {
+  if (!live()) return;
+  await call('POST', '/projects', toApi(rec));
+}

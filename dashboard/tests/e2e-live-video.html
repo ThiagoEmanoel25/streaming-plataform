@@ -1,0 +1,65 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="/css/styles.css"></head><body>
+<div class="app"><aside class="side" id="side"></aside><main class="main" id="view"></main></div><div id="modal-root"></div><div id="toast-root"></div>
+<script>window.__e=[];addEventListener('error',e=>__e.push(e.message+' @'+e.lineno));addEventListener('unhandledrejection',e=>__e.push('rej '+(e.reason&&e.reason.message)));
+localStorage.clear()</script>
+<script type="module">
+import '/js/main.js';
+import { live, call } from '/js/services/backend.js';
+import { store } from '/js/store.js';
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));const $=s=>document.querySelector(s);const $$=s=>[...document.querySelectorAll(s)];
+window.__run=async()=>{const L=[];const ok=(n,c)=>L.push((c?'PASS ':'FAIL ')+n);
+ const click=s=>{const e=$(s);if(!e)throw new Error('missing '+s);e.click()};
+ const EMAIL='video+'+Date.now().toString(36)+'@homecreators.app';
+ try{
+ await sleep(400);
+ ok('backend ligado',live());
+ $('#lem').value=EMAIL;$('#lpw').value='123456';click('#lgo');await sleep(1500);
+ click('[data-route=reels]');await sleep(1500);
+ ok('segmentos vieram do servidor',$$('.sgi').length===12&&(await call('GET','/segments')).segments.length===12);
+
+ // vídeo real gerado na hora e enviado pelo mesmo input que o usuário usa
+ const cv=document.createElement('canvas');cv.width=270;cv.height=480;const g=cv.getContext('2d');
+ const rec=new MediaRecorder(cv.captureStream(15),{mimeType:'video/webm'});const ch=[];rec.ondataavailable=e=>ch.push(e.data);
+ const stopped=new Promise(r=>rec.onstop=r);rec.start();
+ let f=0;const iv=setInterval(()=>{g.fillStyle=`hsl(${f*7%360} 65% 42%)`;g.fillRect(0,0,270,480);g.fillStyle='#fff';g.font='bold 28px sans-serif';g.fillText('GOL '+f,20,100);g.beginPath();g.arc(40+(f*6)%200,300,18,0,7);g.fill();f++},60);
+ await sleep(4000);clearInterval(iv);rec.stop();await stopped;
+ const file=new File([new Blob(ch,{type:'video/webm'})],'meu-jogo.webm',{type:'video/webm'});
+ ok('vídeo de teste gerado ('+Math.round(file.size/1024)+' KB)',file.size>10000);
+ const dt=new DataTransfer();dt.items.add(file);$('#vf').files=dt.files;$('#vf').dispatchEvent(new Event('change',{bubbles:true}));
+ await sleep(6000);
+
+ ok('segmento entrou no topo da lista',$$('.sgi')[0]?.textContent.includes('meu-jogo')&&$$('.sgi').length===13);
+ const vd=$('.vid video');
+ ok('vídeo real tocando no preview',!!vd&&!vd.hidden&&isFinite(vd.duration)&&vd.duration>1);
+ ok('frames reais na linha do tempo',$$('.strip img').length>=6);
+ ok('miniatura do segmento veio do vídeo',!!$('.sgi img'));
+
+ // editar o vídeo real
+ const z=$('[data-k=zoom]');z.value=160;z.dispatchEvent(new Event('input',{bubbles:true}));z.dispatchEvent(new Event('change',{bubbles:true}));
+ ok('zoom aplicado no vídeo real',/scale\(1\.6\)/.test($('.vid').style.transform));
+ $('[data-scrub]').value=500;$('[data-scrub]').dispatchEvent(new Event('input',{bubbles:true}));await sleep(500);
+ ok('arrastar busca no vídeo',Math.abs(vd.currentTime-vd.duration*0.5)<0.7);
+ click('[data-act=tl-toggle]');await sleep(30);
+ ok('linha do tempo recolhe',$('#tl').classList.contains('closed'));
+ click('[data-act=tl-toggle]');await sleep(30);
+
+ // salvar e exportar contra o servidor
+ click('.rl-top [data-act=save]');await sleep(600);
+ const prj=await call('GET','/projects');
+ ok('projeto do vídeo salvo no servidor',prj.projects.length===1&&prj.projects[0].name.includes('meu-jogo'));
+ click('.rl-top [data-act=export]');await sleep(7000);
+ const exp=await call('GET','/exports');
+ ok('export concluído no servidor ('+exp.exports[0]?.status+')',exp.exports.length===1&&exp.exports[0].status==='ready');
+
+ // publicar
+ click('[data-rtab=pub]');await sleep(200);
+ click('[data-conn=ig]');await sleep(100);
+ for(let i=0;i<4;i++){click('[data-a=next]');await sleep(60)}
+ await sleep(2500);click('[data-a=done]');await sleep(500);
+ $('.p-cap').value='Teste com vídeo real.';$('.p-cap').dispatchEvent(new Event('input',{bubbles:true}));
+ click('[data-now]');await sleep(8000);
+ const pub=await call('GET','/publications');
+ ok('publicado no servidor ('+pub.publications[0]?.status+')',pub.publications.length===1&&pub.publications[0].status==='success');
+ }catch(e){L.push('EXC '+e.message+' '+(e.stack||'').split('\n')[1])}
+ L.push('ERRS '+JSON.stringify(__e));return L.join('\n')};
+</script></body></html>

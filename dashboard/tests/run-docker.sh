@@ -14,5 +14,9 @@ done
 echo " ok"
 WEB=$(docker compose ps -q web)
 docker cp dashboard/tests/e2e-live.html "$WEB":/usr/share/nginx/html/e2e-live.html
+docker cp dashboard/tests/e2e-live-video.html "$WEB":/usr/share/nginx/html/e2e-live-video.html
+echo "== fluxo completo (login -> export -> publicar) =="
 node dashboard/tests/cdp.mjs http://localhost:8080/e2e-live.html
-docker exec "$WEB" rm -f /usr/share/nginx/html/e2e-live.html
+echo "== vídeo real enviado pelo usuário =="
+node dashboard/tests/cdp.mjs http://localhost:8080/e2e-live-video.html
+docker exec "$WEB" rm -f /usr/share/nginx/html/e2e-live.html /usr/share/nginx/html/e2e-live-video.html

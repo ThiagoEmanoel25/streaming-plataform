@@ -1,4 +1,4 @@
-import { store, normProject, refreshUsage } from '../store.js';
+import { store, normProject, refreshUsage, pushProject } from '../store.js';
 import { api, TEMPLATES, PLANS } from '../services/api.js';
 import { refreshNav } from '../router.js';
 import { $, $$, on, esc, icon, thumb, phoneHTML, applyPhone, fmtClock as clock, fillRange, logoMark, progress, skeleton, empty, toast, confirmDialog } from '../ui/components.js';
@@ -175,7 +175,9 @@ export async function render(el, params) {
     const l = st.projects, i = l.findIndex((p) => p.id === d.id);
     if (i >= 0) l.splice(i, 1);
     l.unshift(rec); store.save(); dirty = false;
-    if (!quiet) toast('Projeto salvo');
+    const sent = pushProject(rec);
+    if (quiet) sent.catch((e) => console.warn('projeto não foi para o servidor:', e.message));
+    else sent.then(() => toast('Projeto salvo')).catch((e) => toast(e.message || 'Não foi possível salvar no servidor.', 'err'));
   }
   async function startExport() {
     if (exporting) return null;

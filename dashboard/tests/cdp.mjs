@@ -1,8 +1,10 @@
 // driver mínimo do Chrome DevTools Protocol (tempo real)
 import { spawn } from 'node:child_process';
-const chrome = spawn('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', ['--headless=new','--disable-gpu','--remote-debugging-port=9333','--autoplay-policy=no-user-gesture-required','--user-data-dir=/tmp/cdp-prof','--incognito','about:blank'],{stdio:'ignore'});
+const PORT = 9300 + Math.floor(Math.random() * 600), PROF = `/tmp/cdp-prof-${PORT}`;
+const chrome = spawn('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', ['--headless=new','--disable-gpu',`--remote-debugging-port=${PORT}`,'--autoplay-policy=no-user-gesture-required',`--user-data-dir=${PROF}`,'--incognito','about:blank'],{stdio:'ignore'});
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-let targets;for(let i=0;i<40;i++){try{targets=await (await fetch('http://localhost:9333/json')).json();if(targets.length)break}catch{}await sleep(250)}
+process.on('uncaughtException',(e)=>{console.error('cdp:',e.message);try{chrome.kill('SIGKILL')}catch{};process.exit(1)});
+let targets;for(let i=0;i<40;i++){try{targets=await (await fetch(`http://localhost:${PORT}/json`)).json();if(targets.length)break}catch{}await sleep(250)}
 const ws=new WebSocket(targets.find(t=>t.type==='page').webSocketDebuggerUrl);await new Promise(r=>ws.onopen=r);
 let id=0;const pend=new Map();ws.onmessage=e=>{const m=JSON.parse(e.data);if(m.id&&pend.has(m.id)){pend.get(m.id)(m);pend.delete(m.id)}};
 const send=(method,params={})=>new Promise(r=>{const i=++id;pend.set(i,r);ws.send(JSON.stringify({id:i,method,params}))});
@@ -16,4 +18,6 @@ if(has.result?.result?.value){
   const a=await send('Runtime.evaluate',{expression:'window.__after()',awaitPromise:true,returnByValue:true,timeout:60000});
   console.log(a.result?.result?.value ?? JSON.stringify(a));
 }
-chrome.kill();process.exit(0);
+chrome.kill('SIGKILL');
+try{ (await import('node:fs')).rmSync(PROF,{recursive:true,force:true}) }catch{}
+process.exit(0);
