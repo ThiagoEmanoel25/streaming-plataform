@@ -91,6 +91,13 @@ Instagram consiga baixar.
 - Ajustar `dashboard/tests/e2e-live.html`: além do status `ready`, conferir que a URL responde e que o
   `<video>` carrega (duração > 0).
 
+- **Marca dentro da receita** (veio do ruling de A-5 na Task 1): hoje o overlay `kind:"logo"` chega ao
+  render sem nenhum dado da marca, então o logo do time não sai no mp4. O app precisa passar a marca
+  na receita — `brand: { name, logoSrc }`, com `logoSrc` como `data:` URI quando houver logo enviado —
+  e o render passa a desenhar `kind:"logo"` usando esses dados (imagem quando houver, iniciais do nome
+  quando não houver, que é exatamente o fallback `logo-mark` do app). Cobrir com teste: um mp4 renderizado
+  a partir de uma receita com marca tem de diferir do mesmo mp4 sem marca.
+
 **Cuidado:** o modo mock do backend (`RENDER_MODE=mock`) continua existindo e continua passando nos testes.
 
 ## Task 4 — Segmentos vindos do backend
