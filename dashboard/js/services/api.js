@@ -117,13 +117,6 @@ export const api = {
     return { id: 'e' + Date.now(), name: project.name, duration: project.duration, ratio: project.ratio, seed: project.seed, at: new Date().toISOString() };
   },
 
-  async importTrack(url, onProgress) {
-    if (!/(youtube\.com|youtu\.be|instagram\.com)\//i.test(url)) throw new Error('Link não reconhecido. Use um link do YouTube ou do Instagram.');
-    const kind = /instagram/i.test(url) ? 'Instagram' : 'YouTube';
-    for (const [label, p] of [['Lendo o link…', 20], ['Extraindo o áudio…', 60], ['Salvando na sua biblioteca…', 90]]) { onProgress(p, label); await sleep(700); }
-    return { id: 't' + Date.now(), name: `Áudio importado (${kind})`, src: 'Link', dur: '0:30' };
-  },
-
   async translate(text, lang) {
     await sleep(800);
     if (lang === 'pt') return text;

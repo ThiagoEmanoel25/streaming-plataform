@@ -187,7 +187,7 @@ export async function render(el, params) {
       st.exports.unshift(rec); st.usage.exports++; store.save(); await refreshUsage(); refreshNav();
       expRec = rec; toast('Reel exportado');
       return rec;
-    } catch { toast('Falha ao exportar. Tente novamente.', 'err'); return null; }
+    } catch (err) { toast(err?.message || 'Falha ao exportar. Tente novamente.', 'err'); return null; }
     finally { exporting = false; expState = null; const b = $('[data-act=export]', $('#top', el)); if (b) b.disabled = false; if (rtab === 'exp') paintRight(); }
   }
 

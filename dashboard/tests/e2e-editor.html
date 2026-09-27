@@ -4,6 +4,7 @@
 localStorage.setItem('homecreators.v1',JSON.stringify({session:{email:'a@b.com'}}))</script>
 <script type="module">
 import '/js/main.js';
+import { api } from '/js/services/api.js';
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));const $=s=>document.querySelector(s);const $$=s=>[...document.querySelectorAll(s)];
 const L=[];const ok=(n,c)=>L.push((c?'PASS ':'FAIL ')+n);
 const click=s=>{const e=$(s);if(!e)throw new Error('missing '+s);e.click()};
@@ -56,6 +57,14 @@ try{
  // music
  click('[data-track=t2]');await sleep(20);
  ok('music track on timeline',!!$('.mtrack:not(.empty)')&&/Beat/.test($('.mtrack').textContent));
+ // adicionar música: link por URL foi removido (só upload do próprio arquivo)
+ click('[data-act=track-add]');await sleep(30);
+ ok('modal sem aba "Usar link"',!/Usar link/i.test($('.modal').textContent)&&!$('#tm-url'));
+ ok('modal oferece upload de arquivo',!!$('.modal input[type=file]'));
+ const blob=new Blob(['x'],{type:'audio/mpeg'});const trackFile=new File([blob],'minha-trilha.mp3',{type:'audio/mpeg'});
+ const dtTrack=new DataTransfer();dtTrack.items.add(trackFile);
+ const trackInput=$('.modal input[type=file]');trackInput.files=dtTrack.files;trackInput.dispatchEvent(new Event('change',{bubbles:true}));await sleep(30);
+ ok('upload de arquivo ainda funciona',/minha-trilha/.test($('.mtrack').textContent));
  // segment change resets pan + keyframes
  click('[data-seg=s3]');await sleep(30);
  ok('segment switch: ',$('.sgi.on').dataset.seg==='s3'&&$$('.kfd').length===0&&$('.tl-main .ruler').textContent.includes('18s'));
@@ -72,6 +81,12 @@ try{
  // edit invalidates export
  setv('[data-k=zoom]',120);
  ok('editing invalidates export',/Resumo/.test($('#rb').textContent));
+ // mensagem do servidor chega ao usuário (não a mensagem genérica engolida)
+ const origExport=api.exportReel;
+ api.exportReel=async()=>{throw new Error('Você usou as 10 exportações do plano Starter neste mês.')};
+ click('.rl-top [data-act=export]');await sleep(80);
+ ok('erro do servidor aparece no toast, não a mensagem genérica',/Starter neste mês/.test($('#toast-root').textContent));
+ api.exportReel=origExport;
  // publish now with auto-export
  click('[data-rtab=pub]');await sleep(50);
  $('.p-cap').value='Teste';$('.p-cap').dispatchEvent(new Event('input',{bubbles:true}));

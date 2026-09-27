@@ -5,6 +5,7 @@ localStorage.setItem('homecreators.v1',JSON.stringify({session:{email:'a@b.com'}
 <script type="module">
 import '/js/main.js';
 import { NET_STRATEGY } from '/js/services/api.js';
+import { store } from '/js/store.js';
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));const $=s=>document.querySelector(s);const $$=s=>[...document.querySelectorAll(s)];
 window.__run=async()=>{const L=[];const ok=(n,c)=>L.push((c?'PASS ':'FAIL ')+n);
  const row=n=>$$('.net-row').find(r=>r.querySelector('b').textContent===n);
@@ -29,7 +30,19 @@ window.__run=async()=>{const L=[];const ok=(n,c)=>L.push((c?'PASS ':'FAIL ')+n);
  $('[data-sched]').click();await sleep(50);ok('schedule modal suggests the best time ('+NET_STRATEGY.ig+')',$('.modal').textContent.includes(NET_STRATEGY.ig));
  $('[data-ok]').click();await sleep(1200);
  ok('scheduled statuses',$$('.net-row').filter(r=>r.textContent.includes('Agendado')).length===3);
- for(const r of ['home','accounts','analytics','strategies','settings']){$('[data-route='+r+']').click();await sleep(1200);ok('route '+r,$('.view').children.length>0)}
+ // needsReauth: rede sinalizada para reconectar, com botão, e fora da seleção de publicar
+ store.state.accounts.fb={connected:true,handle:'Home Creators',needsReauth:true};store.save();
+ $('[data-route=home]').click();await sleep(100);$('[data-route=publications]').click();await sleep(300);
+ ok('painel Publicar mostra "Precisa reconectar" pro Facebook',/Precisa reconectar/.test(row('Facebook').textContent));
+ ok('painel Publicar oferece botão Reconectar',!!row('Facebook').querySelector('[data-reauth=fb]'));
+ ok('rede em reconexão não tem opção de marcar para publicar',!row('Facebook').querySelector('[data-net=fb]'));
+ for(const r of ['home','accounts','analytics','strategies','settings']){$('[data-route='+r+']').click();await sleep(1200);ok('route '+r,$('.view').children.length>0)
+  if(r==='accounts'){
+   const card=$$('.acct').find(c=>c.textContent.includes('Facebook'));
+   ok('Contas sociais mostra "Precisa reconectar" pro Facebook',!!card&&/Precisa reconectar/.test(card.textContent));
+   ok('Contas sociais oferece botão Reconectar',!!card.querySelector('[data-reauth=fb]'));
+  }
+ }
  $('[data-route=strategies]').click();await sleep(100);$('[data-use]').click();await sleep(50);
  $('[data-route=reels]').click();await sleep(900);ok('caption from Estratégias reaches Reels panel',/golaço/i.test($('.p-cap').value));
  }catch(e){L.push('EXC '+e.message+' '+(e.stack||'').split('\n')[1])}

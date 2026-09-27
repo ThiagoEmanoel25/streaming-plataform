@@ -17,7 +17,9 @@ export function mountPublisher(root, ctx) {
   paint(root);
 }
 
-const selected = () => providers.list().filter((p) => p.connected && pd().selected[p.id]);
+const GENERIC_PUB_ERR = 'Não foi possível publicar agora. Tente novamente.';
+const publishable = (p) => p.connected && !p.account.needsReauth;
+const selected = () => providers.list().filter((p) => publishable(p) && pd().selected[p.id]);
 const limit = () => Math.min(...selected().map((p) => p.maxChars), 2200);
 const busy = () => Object.values(pd().statuses).some((x) => BUSY.includes(x.status));
 
@@ -41,6 +43,7 @@ function paintNets(root) {
     const st = pd().statuses[p.id], a = p.account;
     const right = st
       ? `<div class="st">${statusPill(st.status)}${st.msg ? `<small class="${st.status === 'failed' ? 'err-t' : 'muted'}">${esc(st.msg)}</small>` : ''}${st.status === 'failed' ? `<button class="btn ghost sm" data-retry="${p.id}">${icon('refresh', 14)} Tentar novamente</button>` : ''}</div>`
+      : a.needsReauth ? `<div class="st">${pill('Precisa reconectar', 'err')}<button class="btn ghost sm" data-reauth="${p.id}">${icon('refresh', 14)} Reconectar</button></div>`
       : p.connected ? `${toggle(`data-net="${p.id}"`, !!pd().selected[p.id])}${pill('Conectado', 'ok')}` : `<button class="btn ghost sm" data-conn="${p.id}">Conectar</button>`;
     return `<div class="net-row">${netLogo(p.id, 36)}<div class="grow"><b>${p.name}</b><small class="${p.connected ? 'muted' : 'muted'}">${p.connected ? esc(a.handle) : 'Não conectado'}</small></div>${right}</div>`;
   }).join('');
@@ -70,7 +73,7 @@ async function run(root, e, ids) {
   await Promise.all(ids.map(async (id) => {
     setStatus(root, e, id, 'queued');
     try { await providers.get(id).publish({ exportId: e.id, caption: pd().caption, cover: pd().cover }, (st, msg) => setStatus(root, e, id, st, msg)); }
-    catch (err) { setStatus(root, e, id, 'failed', err.message); }
+    catch (err) { setStatus(root, e, id, 'failed', err?.message || GENERIC_PUB_ERR); }
   }));
 }
 
@@ -120,10 +123,11 @@ function bind(root) {
   on(root, 'click', '[data-retry]', (e, t) => {
     const id = t.dataset.retry, ex = root._pctx.exp(); if (!ex) return;
     setStatus(root, ex, id, 'queued');
-    providers.get(id).publish({ exportId: ex.id, caption: pd().caption }, (st, m) => setStatus(root, ex, id, st, m)).catch((err) => setStatus(root, ex, id, 'failed', err.message));
+    providers.get(id).publish({ exportId: ex.id, caption: pd().caption }, (st, m) => setStatus(root, ex, id, st, m)).catch((err) => setStatus(root, ex, id, 'failed', err?.message || GENERIC_PUB_ERR));
   });
   on(root, 'click', '[data-now]', () => publishNow(root));
   on(root, 'click', '[data-sched]', () => openSchedule(root));
   on(root, 'click', '[data-reset]', () => { pd().statuses = {}; repaint(root); });
   on(root, 'click', '[data-go]', (e, t) => go(t.dataset.go));
+  on(root, 'click', '[data-reauth]', (e, t) => connectWizard(t.dataset.reauth, () => repaint(root)));
 }
