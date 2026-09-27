@@ -1,5 +1,22 @@
 # Plano — fechar o escopo mínimo
 
+## Mudança de rumo (decisão do cliente)
+
+O alvo é **um MVP para teste técnico + um documento de escala**, não um produto em produção.
+Consequências:
+
+- O export **fica simulado**. As Tasks 2 e 3 (storage S3 e ligar o render ponta a ponta) estão
+  **descartadas**.
+- A Task 1 (worker de render com ffmpeg) **já foi construída e testada**, e continua no repositório
+  em `render/`, **sem estar ligada ao app**. Não é custo: é a prova de que a receita do editor vira
+  mp4 de verdade, e o `render/test.sh` demonstra isso sozinho. O demo roda no modo simulado do backend.
+- Entram três documentos: escala (Task 8), pesquisa de mercado com fontes (Task 7) e
+  roteiro de demonstração (Task 9).
+- Aprovações das redes, contas Cloudflare/RunPod/Supabase/Stripe **deixam de ser perseguidas**.
+  Viram assunto do documento de escala.
+
+Ordem de execução: **5 → 4 → 6 → 7 → 8+9**.
+
 ## Contexto
 
 `dashboard/` (app, Cloudflare Pages, ES modules sem build) e `backend/` (API, Cloudflare Worker + D1,
@@ -67,7 +84,10 @@ duração pedida, para o fluxo ficar testável de ponta a ponta. Deixar claro no
 de texto, e confere com `ffprobe` que o mp4 saiu com a resolução, a duração e o codec certos.
 Testar as duas proporções.
 
-## Task 2 — Storage S3 (R2 / B2)
+## Task 2 — Storage S3 (R2 / B2) — **DESCARTADA**
+
+> Descartada com a mudança de rumo: o export fica simulado. Mantida aqui só como registro.
+
 
 O render precisa publicar o mp4 em um bucket e devolver uma URL que o app consiga tocar e o
 Instagram consiga baixar.
@@ -81,7 +101,11 @@ Instagram consiga baixar.
 **Teste obrigatório:** subir MinIO, renderizar, e baixar o objeto pela URL devolvida conferindo que
 é um mp4 válido (ffprobe) e que o tamanho bate.
 
-## Task 3 — Ligar o export real ponta a ponta
+## Task 3 — Ligar o export real ponta a ponta — **DESCARTADA**
+
+> Descartada com a mudança de rumo. O requisito da marca na receita cai junto: sem render ligado,
+> o overlay de logo continua valendo só na interface.
+
 
 - `backend/src/render.js`: aceitar `RENDER_URL` (se presente, é para lá que o job vai; senão monta a
   URL do RunPod a partir de `RUNPOD_ENDPOINT`). Mesmo caminho de código para local e produção.
@@ -162,6 +186,43 @@ nenhuma fonte — isso não cumpre o requisito.
 - Nada de inventar número: sem fonte, a afirmação não entra.
 
 Sem código. O entregável é a seção reescrita, com as fontes.
+
+## Task 8 — Documento de escala
+
+O cliente pediu, com estas palavras: "um documento explicando como a gente ia escalar".
+Criar `docs/escala.md`, escrito para quem vai avaliar o teste técnico e decidir o próximo passo —
+um leitor técnico que não conhece este repositório.
+
+Tem de responder, sem enrolação:
+
+1. **O que é real e o que é simulado hoje**, item por item. Honestidade primeiro: o documento perde
+   todo o valor se exagerar. Puxar de `docs/requisitos.md`, sem repetir a tabela inteira.
+2. **Publicar de verdade nas 7 redes**: agregador (Ayrshare, Late, Upload-Post) contra integração
+   direta — custo, prazo e dependência de cada um, e por que a recomendação é agregador primeiro e
+   migração das redes de maior volume depois. O que cada rede exige concretamente
+   (Meta App Review e conta Business; cota e verificação do YouTube; auditoria do TikTok; API paga do X;
+   parceiros do LinkedIn). Por que a interface `SocialProvider` faz a troca sair barata.
+3. **Por que "publicar nas 7 de uma vez" é fan-out e não uma chamada**: job por rede, status
+   independente, idempotência por `<export>:<rede>`, retry isolado. Isso já está implementado —
+   mostrar onde, com caminho de arquivo.
+4. **Render e storage em escala**: por que Worker não roda ffmpeg, o desenho fila → GPU → storage →
+   webhook, custo por export, e o que `render/` já resolve.
+5. **O que quebra primeiro quando o uso crescer** e a ordem de resolver: fila de verdade
+   (Cloudflare Queues), limite por rede e por usuário, renovação de token em segundo plano,
+   backoff em 429/5xx, dead-letter, retenção de exports.
+6. **Roteiro por fases**, com o que depende de conta do cliente e o que depende só de código.
+
+Sem inventar número. Se um custo ou prazo for estimativa, dizer que é.
+
+## Task 9 — Roteiro de demonstração
+
+Criar `docs/demo.md`: um passo a passo curto (cabe em uma página) de como apresentar o MVP.
+O que subir (`docker compose up --build`), o que abrir, em que ordem clicar para o fluxo
+conectar → editar → exportar → publicar aparecer inteiro, e onde estão os detalhes que valem
+apontar (falha isolada por rede com retry, limites do plano vindos do servidor, tutorial sem jargão).
+Incluir uma seção "o que dizer sobre o que é simulado" — a frase honesta e curta para cada parte,
+para que ninguém seja pego de surpresa numa pergunta. Incluir também
+`sh render/test.sh` como prova opcional de que o render real existe.
 
 ## Verificação final
 
